@@ -3,226 +3,781 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Local Research MCP – NarcoNations.org</title>
+    <title>Local Research MCP Console</title>
     <style>
       :root {
         color-scheme: dark light;
         --bg: #05060a;
-        --fg: #f5f5f5;
+        --bg-alt: rgba(10, 13, 20, 0.75);
+        --fg: #f5f7fb;
+        --muted: rgba(245, 247, 251, 0.65);
         --accent: #4ad1ff;
-        --muted: rgba(255, 255, 255, 0.6);
-        --panel: rgba(14, 17, 26, 0.8);
+        --accent-strong: #5af7c1;
+        --danger: #ff6b6b;
+        --card-radius: clamp(16px, 2vw, 24px);
         font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
+
       * {
         box-sizing: border-box;
       }
+
       body {
         margin: 0;
         min-height: 100vh;
-        background: radial-gradient(circle at 10% 20%, rgba(60, 92, 255, 0.15), transparent 50%),
-          radial-gradient(circle at 90% 10%, rgba(74, 209, 255, 0.2), transparent 45%),
-          linear-gradient(160deg, var(--bg), #0b0e15 45%, #000 100%);
+        background: radial-gradient(circle at 8% 18%, rgba(90, 138, 255, 0.18), transparent 55%),
+          radial-gradient(circle at 92% 12%, rgba(74, 209, 255, 0.25), transparent 48%),
+          linear-gradient(145deg, #040610 0%, #080a14 45%, #020307 100%);
         color: var(--fg);
         display: flex;
         flex-direction: column;
       }
+
       header {
-        padding: clamp(2rem, 6vw, 6rem) clamp(1.5rem, 8vw, 8rem) 0 clamp(1.5rem, 8vw, 8rem);
+        padding: clamp(1.5rem, 5vw, 3.5rem) clamp(1.25rem, 6vw, 4.5rem) clamp(1rem, 3vw, 2rem);
         display: flex;
         flex-direction: column;
-        gap: clamp(1.5rem, 4vw, 3rem);
+        gap: clamp(1rem, 3vw, 1.8rem);
       }
+
       header h1 {
-        font-size: clamp(2.5rem, 6vw, 4.5rem);
-        max-width: 28ch;
-        line-height: 1.05;
         margin: 0;
+        font-size: clamp(2rem, 6vw, 3.8rem);
+        line-height: 1.05;
+        max-width: 36ch;
       }
+
       header p {
         margin: 0;
-        max-width: 46ch;
-        font-size: clamp(1rem, 2.5vw, 1.2rem);
+        font-size: clamp(1rem, 2.7vw, 1.2rem);
         color: var(--muted);
+        max-width: 60ch;
       }
-      .cta-group {
+
+      .app {
+        flex: 1;
         display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
+        flex-direction: column;
+        padding: 0 clamp(1rem, 6vw, 4rem) clamp(2.5rem, 8vw, 4rem);
       }
-      a.button {
+
+      .layout {
+        display: grid;
+        gap: clamp(1.2rem, 2.5vw, 1.8rem);
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .panel {
+        background: var(--bg-alt);
+        backdrop-filter: blur(18px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: var(--card-radius);
+        padding: clamp(1rem, 2.5vw, 1.6rem);
+        display: flex;
+        flex-direction: column;
+        gap: clamp(0.75rem, 2vw, 1.2rem);
+        box-shadow: 0 28px 65px rgba(0, 0, 0, 0.35);
+      }
+
+      .panel h2 {
+        margin: 0;
+        font-size: clamp(1.2rem, 3vw, 1.6rem);
+      }
+
+      form {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        font-size: 0.95rem;
+      }
+
+      input[type="text"],
+      input[type="number"],
+      textarea,
+      select {
+        background: rgba(8, 12, 22, 0.72);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: var(--fg);
+        border-radius: 12px;
+        padding: 0.65rem 0.8rem;
+        font-size: 0.95rem;
+        resize: vertical;
+      }
+
+      textarea {
+        min-height: 5.5rem;
+      }
+
+      input[type="range"] {
+        accent-color: var(--accent);
+      }
+
+      button {
+        border: none;
+        border-radius: 999px;
+        padding: 0.75rem 1.4rem;
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+        color: #011018;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 0.9rem 1.6rem;
-        border-radius: 999px;
-        text-decoration: none;
-        background: var(--accent);
-        color: #02060c;
-        font-weight: 600;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        box-shadow: 0 18px 40px rgba(74, 209, 255, 0.3);
+        gap: 0.45rem;
+        box-shadow: 0 18px 40px rgba(74, 209, 255, 0.35);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
       }
-      a.button.secondary {
-        background: transparent;
-        color: var(--fg);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+
+      button:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
         box-shadow: none;
       }
-      a.button:hover {
+
+      button:hover:not(:disabled) {
         transform: translateY(-2px);
-        box-shadow: 0 20px 44px rgba(74, 209, 255, 0.4);
+        box-shadow: 0 20px 44px rgba(90, 247, 193, 0.38);
       }
-      main {
-        padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 8vw, 8rem) clamp(3rem, 8vw, 6rem) clamp(1.5rem, 8vw, 8rem);
+
+      .inline-controls {
         display: grid;
-        gap: clamp(2rem, 4vw, 3.5rem);
+        gap: 0.75rem;
       }
-      section {
-        background: var(--panel);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 24px;
-        padding: clamp(1.5rem, 4vw, 3rem);
-        backdrop-filter: blur(12px);
-        box-shadow: 0 24px 60px rgba(2, 6, 12, 0.45);
+
+      .inline-controls.two {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       }
-      section h2 {
-        margin-top: 0;
-        font-size: clamp(1.4rem, 3vw, 2rem);
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+        font-size: 0.9rem;
       }
-      .grid {
-        display: grid;
-        gap: 1.5rem;
+
+      .filters label {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.45rem;
       }
-      .grid.two {
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      }
-      .card {
-        padding: 1.2rem;
-        border-radius: 18px;
-        background: rgba(12, 16, 24, 0.85);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+
+      .results-list {
         display: flex;
         flex-direction: column;
+        gap: 0.8rem;
+      }
+
+      .result-card {
+        background: rgba(9, 14, 22, 0.78);
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 0.85rem 1rem;
+        display: grid;
+        gap: 0.45rem;
+      }
+
+      .result-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
         gap: 0.6rem;
       }
-      .card h3 {
-        margin: 0;
-        font-size: 1.1rem;
+
+      .result-score {
+        font-weight: 600;
+        color: var(--accent);
       }
-      .card p {
-        margin: 0;
+
+      .result-path {
         color: var(--muted);
-        font-size: 0.95rem;
+        font-size: 0.85rem;
+        word-break: break-all;
       }
-      code {
-        display: inline-block;
-        padding: 0.3rem 0.6rem;
-        border-radius: 10px;
-        background: rgba(255, 255, 255, 0.06);
+
+      .result-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+
+      .doc-viewer {
+        background: rgba(7, 11, 18, 0.85);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 0.85rem 1rem;
+        max-height: clamp(18rem, 45vh, 28rem);
+        overflow-y: auto;
         font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
-        font-size: 0.95rem;
+        font-size: 0.92rem;
+        line-height: 1.55;
+        white-space: pre-wrap;
       }
-      footer {
-        padding: clamp(1.5rem, 4vw, 2.5rem);
-        text-align: center;
+
+      .doc-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
         font-size: 0.9rem;
-        color: rgba(255, 255, 255, 0.45);
+        color: var(--muted);
       }
+
+      .stats-grid {
+        display: grid;
+        gap: 0.65rem;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      }
+
+      .stat-card {
+        background: rgba(9, 13, 21, 0.82);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 0.75rem 1rem;
+        display: grid;
+        gap: 0.35rem;
+      }
+
+      .stat-value {
+        font-size: 1.4rem;
+        font-weight: 600;
+      }
+
+      .event-log {
+        display: grid;
+        gap: 0.6rem;
+        max-height: clamp(16rem, 42vh, 24rem);
+        overflow-y: auto;
+        font-size: 0.9rem;
+      }
+
+      .event-item {
+        background: rgba(8, 12, 19, 0.85);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 0.65rem 0.8rem;
+        display: grid;
+        gap: 0.3rem;
+      }
+
+      .event-item span {
+        display: block;
+      }
+
+      .event-type {
+        font-weight: 600;
+      }
+
+      .event-time {
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
+      .error-message {
+        color: var(--danger);
+        font-size: 0.9rem;
+      }
+
+      .success-message {
+        color: var(--accent-strong);
+        font-size: 0.9rem;
+      }
+
       @media (min-width: 900px) {
-        main {
-          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        .layout {
+          grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+          grid-auto-flow: dense;
         }
-        main section:first-child {
-          grid-column: span 2;
+
+        .search-panel {
+          grid-column: 1 / -1;
+        }
+      }
+
+      @media (min-width: 1400px) {
+        .layout {
+          grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr);
+        }
+
+        .search-panel {
+          grid-column: 1 / 3;
+        }
+
+        .doc-panel {
+          grid-column: 1 / 2;
+        }
+
+        .events-panel {
+          grid-column: 1 / -1;
         }
       }
     </style>
   </head>
   <body>
     <header>
-      <h1>Local Research MCP for NarcoNations.org</h1>
+      <h1>NarcoNations Local Research Console</h1>
       <p>
-        Secure, offline indexing and retrieval for your entire NarcoNations research corpus. This service loads PDFs, Markdown,
-        Word, plain text, and Apple Pages files, builds hybrid search indexes, and returns grounded citations through the Model
-        Context Protocol.
+        Manage the Local MCP server with hybrid search, document retrieval, and live indexing controls. Optimised for rapid desk
+        research across PDFs, Markdown, text, Word, and Pages files with deterministic citations.
       </p>
-      <div class="cta-group">
-        <a class="button" href="https://modelcontextprotocol.io" target="_blank" rel="noreferrer">Model Context Protocol</a>
-        <a class="button secondary" href="https://github.com/modelcontextprotocol/typescript-sdk" target="_blank" rel="noreferrer"
-          >TypeScript SDK</a
-        >
-      </div>
     </header>
-    <main>
-      <section>
-        <h2>Quickstart</h2>
-        <div class="grid two">
-          <div class="card">
-            <h3>Install dependencies</h3>
-            <p><code>npm install</code></p>
+    <div class="app">
+      <main class="layout">
+        <section class="panel search-panel">
+          <h2>Search corpus</h2>
+          <form id="search-form">
+            <label>
+              Query
+              <textarea id="search-query" name="query" placeholder="Cartel logistics network" required></textarea>
+            </label>
+            <div class="inline-controls two">
+              <label>
+                Results (k)
+                <input id="search-k" name="k" type="number" min="1" max="32" value="8" />
+              </label>
+              <label>
+                Dense vs keyword (α)
+                <input id="search-alpha" name="alpha" type="range" min="0" max="1" step="0.05" value="0.65" />
+              </label>
+            </div>
+            <div class="filters" aria-label="Document filters">
+              <label><input type="checkbox" value="pdf" /> PDF</label>
+              <label><input type="checkbox" value="markdown" /> Markdown</label>
+              <label><input type="checkbox" value="text" /> Text</label>
+              <label><input type="checkbox" value="word" /> Word</label>
+              <label><input type="checkbox" value="pages" /> Pages</label>
+            </div>
+            <button type="submit">Search</button>
+            <p id="search-status" class="error-message" hidden></p>
+          </form>
+          <div id="search-results" class="results-list" aria-live="polite"></div>
+        </section>
+
+        <section class="panel doc-panel">
+          <h2>Document viewer</h2>
+          <div class="doc-meta" id="doc-meta">
+            <span>Select a search hit to preview context.</span>
           </div>
-          <div class="card">
-            <h3>Prefetch MiniLM (optional)</h3>
-            <p><code>npm run models:download</code></p>
-          </div>
-          <div class="card">
-            <h3>Index your corpus</h3>
-            <p><code>npm run index -- ./docs ./public/dossiers</code></p>
-          </div>
-          <div class="card">
-            <h3>Start the MCP server</h3>
-            <p><code>npm run dev</code></p>
-          </div>
-        </div>
-      </section>
-      <section>
-        <h2>Available MCP Tools</h2>
-        <div class="grid two">
-          <div class="card">
-            <h3>search_local</h3>
-            <p>Hybrid dense + keyword retrieval with precise citations for every chunk.</p>
-          </div>
-          <div class="card">
-            <h3>get_doc</h3>
-            <p>Return the full text for a file or a single PDF/Pages page.</p>
-          </div>
-          <div class="card">
-            <h3>reindex &amp; watch</h3>
-            <p>Refresh the corpus on demand or stream file system changes into the index.</p>
-          </div>
-          <div class="card">
-            <h3>stats</h3>
-            <p>Expose manifest metrics: files indexed, chunks by type, and embedding cache counts.</p>
-          </div>
-          <div class="card">
-            <h3>import_chatgpt_export</h3>
-            <p>Convert ChatGPT exports into Markdown and automatically reindex the output directory.</p>
-          </div>
-        </div>
-      </section>
-      <section>
-        <h2>Designed for the Field</h2>
-        <div class="grid two">
-          <div class="card">
-            <h3>Offline-first</h3>
-            <p>No external APIs or cloud calls. Embeddings are generated locally with Xenova MiniLM.</p>
-          </div>
-          <div class="card">
-            <h3>Format coverage</h3>
-            <p>OCR-aware PDF parsing, Markdown with front-matter, clean DOCX extraction, and best-effort Pages support.</p>
-          </div>
-          <div class="card">
-            <h3>Deterministic citations</h3>
-            <p>Every result includes the file path, page, character offsets, and a context snippet.</p>
-          </div>
-          <div class="card">
-            <h3>Secure boundaries</h3>
-            <p>Roots whitelist, symlink guards, and ZipSlip protection keep the index locked to approved folders.</p>
-          </div>
-        </div>
-      </section>
-    </main>
-    <footer>Built for NarcoNations.org · Local Research MCP v1.1 · Deployable on Vercel or offline</footer>
+          <div class="doc-viewer" id="doc-content"></div>
+        </section>
+
+        <section class="panel stats-panel">
+          <h2>Corpus stats</h2>
+          <div id="stats-grid" class="stats-grid"></div>
+          <button id="refresh-stats" type="button">Refresh stats</button>
+        </section>
+
+        <section class="panel actions-panel">
+          <h2>Indexer controls</h2>
+          <form id="reindex-form">
+            <label>
+              Paths to reindex (optional, newline separated)
+              <textarea id="reindex-paths" placeholder="./docs
+./public/dossiers"></textarea>
+            </label>
+            <button type="submit">Reindex now</button>
+            <p id="reindex-status" class="success-message" hidden></p>
+          </form>
+          <form id="watch-form">
+            <label>
+              Watch paths (optional override)
+              <textarea id="watch-paths" placeholder="Leave blank to watch configured roots"></textarea>
+            </label>
+            <button type="submit">Start watcher</button>
+            <p id="watch-status" class="success-message" hidden></p>
+          </form>
+          <form id="import-form">
+            <label>
+              ChatGPT export path
+              <input type="text" id="import-export" placeholder="~/Downloads/chatgpt-export" required />
+            </label>
+            <label>
+              Output directory
+              <input type="text" id="import-out" value="./docs/chatgpt-export-md" required />
+            </label>
+            <button type="submit">Import export &amp; reindex</button>
+            <p id="import-status" class="success-message" hidden></p>
+          </form>
+        </section>
+
+        <section class="panel events-panel">
+          <h2>Live events</h2>
+          <div id="events" class="event-log" aria-live="polite"></div>
+        </section>
+      </main>
+    </div>
+    <script type="module">
+      const resultsEl = document.getElementById("search-results");
+      const docMetaEl = document.getElementById("doc-meta");
+      const docContentEl = document.getElementById("doc-content");
+      const statsGridEl = document.getElementById("stats-grid");
+      const eventsEl = document.getElementById("events");
+      const searchStatusEl = document.getElementById("search-status");
+      const reindexStatusEl = document.getElementById("reindex-status");
+      const watchStatusEl = document.getElementById("watch-status");
+      const importStatusEl = document.getElementById("import-status");
+
+      const state = {
+        results: [],
+        selected: null,
+        events: [],
+        stats: null,
+      };
+
+      function escapeHtml(value) {
+        return value
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      async function fetchJson(url, options) {
+        const res = await fetch(url, {
+          headers: { "Content-Type": "application/json" },
+          ...options,
+        });
+        const contentType = res.headers.get("content-type");
+        const isJson = contentType && contentType.includes("application/json");
+        const payload = isJson ? await res.json() : await res.text();
+        if (!res.ok) {
+          const message = typeof payload === "string" ? payload : payload?.error || res.statusText;
+          throw new Error(message);
+        }
+        return payload;
+      }
+
+      function renderResults() {
+        resultsEl.innerHTML = "";
+        if (!state.results.length) {
+          const empty = document.createElement("p");
+          empty.textContent = "No results yet. Submit a query to populate matches.";
+          empty.style.color = "var(--muted)";
+          resultsEl.appendChild(empty);
+          return;
+        }
+
+        for (const [index, result] of state.results.entries()) {
+          const card = document.createElement("article");
+          card.className = "result-card";
+
+          const header = document.createElement("div");
+          header.className = "result-header";
+
+          const score = document.createElement("span");
+          score.className = "result-score";
+          score.textContent = `Score ${(result.score ?? 0).toFixed(3)}`;
+
+          const file = document.createElement("span");
+          file.className = "result-path";
+          const citation = result.citation ?? {};
+          const page = citation.page ? ` · page ${citation.page}` : "";
+          file.textContent = `${citation.filePath ?? "Unknown file"}${page}`;
+
+          header.append(score, file);
+          card.appendChild(header);
+
+          if (citation.snippet) {
+            const snippet = document.createElement("p");
+            snippet.textContent = citation.snippet;
+            snippet.style.margin = "0";
+            snippet.style.color = "var(--muted)";
+            card.appendChild(snippet);
+          }
+
+          const actions = document.createElement("div");
+          actions.className = "result-actions";
+
+          const viewBtn = document.createElement("button");
+          viewBtn.type = "button";
+          viewBtn.textContent = "Open";
+          viewBtn.addEventListener("click", () => loadDocument(result, index));
+          actions.appendChild(viewBtn);
+
+          card.appendChild(actions);
+          resultsEl.appendChild(card);
+        }
+      }
+
+      function renderDocument(doc, result) {
+        if (!doc) {
+          docMetaEl.innerHTML = "<span>Select a search hit to preview context.</span>";
+          docContentEl.textContent = "";
+          return;
+        }
+
+        const citation = result?.citation ?? {};
+        const metaLines = [];
+        if (citation.filePath) metaLines.push(`<strong>File:</strong> ${escapeHtml(citation.filePath)}`);
+        if (typeof citation.page === "number") metaLines.push(`<strong>Page:</strong> ${citation.page}`);
+        metaLines.push(`<strong>Chars:</strong> ${doc.text.length.toLocaleString()}`);
+        docMetaEl.innerHTML = metaLines.map((line) => `<span>${line}</span>`).join("");
+
+        const text = doc.text ?? "";
+        const start = typeof citation.startChar === "number" ? citation.startChar : null;
+        const end = typeof citation.endChar === "number" ? citation.endChar : null;
+        if (start !== null && end !== null && end > start && end <= text.length) {
+          const before = escapeHtml(text.slice(0, start));
+          const highlight = escapeHtml(text.slice(start, end));
+          const after = escapeHtml(text.slice(end));
+          docContentEl.innerHTML = `${before}<mark>${highlight}</mark>${after}`;
+        } else {
+          docContentEl.textContent = text;
+        }
+      }
+
+      function renderStats() {
+        statsGridEl.innerHTML = "";
+        const stats = state.stats;
+        if (!stats) {
+          const empty = document.createElement("p");
+          empty.textContent = "Stats unavailable. Index at least once to populate metrics.";
+          empty.style.color = "var(--muted)";
+          statsGridEl.appendChild(empty);
+          return;
+        }
+
+        const fileCount = stats.files ? Object.keys(stats.files).length : 0;
+        const lastIndexed = stats.lastIndexedAt
+          ? new Date(stats.lastIndexedAt).toLocaleString()
+          : "–";
+
+        const summary = [
+          { label: "Files", value: fileCount },
+          { label: "Chunks", value: stats.chunks ?? 0 },
+          { label: "Embeddings cached", value: stats.embeddingsCached ?? 0 },
+          { label: "Last indexed", value: lastIndexed },
+        ];
+
+        for (const item of summary) {
+          const card = document.createElement("div");
+          card.className = "stat-card";
+          const value = document.createElement("span");
+          value.className = "stat-value";
+          value.textContent = typeof item.value === "number" ? item.value.toLocaleString() : item.value;
+          const label = document.createElement("span");
+          label.style.color = "var(--muted)";
+          label.textContent = item.label;
+          card.append(value, label);
+          statsGridEl.appendChild(card);
+        }
+
+        if (stats.byType) {
+          for (const [type, count] of Object.entries(stats.byType)) {
+            const card = document.createElement("div");
+            card.className = "stat-card";
+            const value = document.createElement("span");
+            value.className = "stat-value";
+            value.textContent = Number(count).toLocaleString();
+            const label = document.createElement("span");
+            label.style.color = "var(--muted)";
+            label.textContent = `Chunks (${type})`;
+            card.append(value, label);
+            statsGridEl.appendChild(card);
+          }
+        }
+      }
+
+      function pushEvent(event) {
+        state.events.unshift(event);
+        if (state.events.length > 120) state.events.length = 120;
+        eventsEl.innerHTML = "";
+        for (const item of state.events) {
+          const entry = document.createElement("div");
+          entry.className = "event-item";
+          const type = document.createElement("span");
+          type.className = "event-type";
+          type.textContent = `${item.type}`;
+          const time = document.createElement("span");
+          time.className = "event-time";
+          time.textContent = new Date(item.timestamp ?? Date.now()).toLocaleTimeString();
+          const body = document.createElement("span");
+          body.style.color = "var(--muted)";
+          body.textContent = JSON.stringify(item, null, 2);
+          entry.append(type, time, body);
+          eventsEl.appendChild(entry);
+        }
+      }
+
+      async function loadDocument(result, index) {
+        try {
+          const payload = {
+            path: result?.citation?.filePath,
+            page: result?.citation?.page,
+          };
+          const doc = await fetchJson("/api/get-doc", {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          state.selected = { doc, result, index };
+          renderDocument(doc, result);
+        } catch (error) {
+          docMetaEl.innerHTML = `<span class="error-message">${escapeHtml(error.message)}</span>`;
+          docContentEl.textContent = "";
+        }
+      }
+
+      async function refreshStats() {
+        try {
+          const stats = await fetchJson("/api/stats", { method: "GET" });
+          state.stats = stats;
+          renderStats();
+        } catch (error) {
+          statsGridEl.innerHTML = `<p class="error-message">${escapeHtml(error.message)}</p>`;
+        }
+      }
+
+      document.getElementById("search-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const query = form.query.value.trim();
+        if (!query) return;
+        const alpha = Number(form.alpha.value);
+        const k = Number(form.k.value);
+        const filters = Array.from(form.querySelectorAll(".filters input:checked")).map((input) => input.value);
+        form.querySelector("button").disabled = true;
+        searchStatusEl.hidden = true;
+        try {
+          const payload = {
+            query,
+            k,
+            alpha,
+            filters: filters.length ? { type: filters } : undefined,
+          };
+          const result = await fetchJson("/api/search", {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          state.results = result.results ?? [];
+          renderResults();
+        } catch (error) {
+          searchStatusEl.textContent = error.message;
+          searchStatusEl.hidden = false;
+        } finally {
+          form.querySelector("button").disabled = false;
+        }
+      });
+
+      document.getElementById("refresh-stats").addEventListener("click", refreshStats);
+
+      document.getElementById("reindex-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const button = form.querySelector("button");
+        const pathsRaw = document.getElementById("reindex-paths").value;
+        const paths = pathsRaw
+          .split(/\n+/)
+          .map((line) => line.trim())
+          .filter(Boolean);
+        button.disabled = true;
+        reindexStatusEl.hidden = true;
+        try {
+          const result = await fetchJson("/api/reindex", {
+            method: "POST",
+            body: JSON.stringify({ paths }),
+          });
+          reindexStatusEl.textContent = `Indexed ${result.indexed ?? 0}, updated ${result.updated ?? 0}, skipped ${result.skipped ?? 0}.`;
+          reindexStatusEl.className = "success-message";
+          reindexStatusEl.hidden = false;
+          await refreshStats();
+        } catch (error) {
+          reindexStatusEl.textContent = error.message;
+          reindexStatusEl.className = "error-message";
+          reindexStatusEl.hidden = false;
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      document.getElementById("watch-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const button = form.querySelector("button");
+        const pathsRaw = document.getElementById("watch-paths").value;
+        const paths = pathsRaw
+          .split(/\n+/)
+          .map((line) => line.trim())
+          .filter(Boolean);
+        button.disabled = true;
+        watchStatusEl.hidden = true;
+        try {
+          const result = await fetchJson("/api/watch", {
+            method: "POST",
+            body: JSON.stringify({ paths }),
+          });
+          const watching = (result.watching ?? [])
+            .map((p) => `• ${escapeHtml(String(p))}`)
+            .join("<br />");
+          watchStatusEl.innerHTML = `Watching ${result.watching?.length ?? 0} path(s)<br />${watching}`;
+          watchStatusEl.className = "success-message";
+          watchStatusEl.hidden = false;
+        } catch (error) {
+          watchStatusEl.textContent = error.message;
+          watchStatusEl.className = "error-message";
+          watchStatusEl.hidden = false;
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      document.getElementById("import-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const button = form.querySelector("button");
+        const exportPath = document.getElementById("import-export").value.trim();
+        const outDir = document.getElementById("import-out").value.trim();
+        if (!exportPath || !outDir) return;
+        button.disabled = true;
+        importStatusEl.hidden = true;
+        try {
+          const result = await fetchJson("/api/import-chatgpt", {
+            method: "POST",
+            body: JSON.stringify({ exportPath, outDir }),
+          });
+          importStatusEl.textContent = `Converted ${result.filesWritten ?? 0} files to ${result.outDir}`;
+          importStatusEl.className = "success-message";
+          importStatusEl.hidden = false;
+          await refreshStats();
+        } catch (error) {
+          importStatusEl.textContent = error.message;
+          importStatusEl.className = "error-message";
+          importStatusEl.hidden = false;
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      function startEventStream() {
+        const source = new EventSource("/api/events");
+        source.addEventListener("message", (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            pushEvent(data);
+          } catch {
+            // ignore malformed payloads
+          }
+        });
+        source.addEventListener("error", () => {
+          const entry = {
+            type: "log",
+            level: "error",
+            message: "Event stream disconnected",
+            timestamp: new Date().toISOString(),
+          };
+          pushEvent(entry);
+        });
+      }
+
+      renderResults();
+      renderDocument(null, null);
+      renderStats();
+      refreshStats();
+      startEventStream();
+    </script>
   </body>
 </html>
