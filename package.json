@@ -19,7 +19,7 @@
     "chatgpt:quickstart": "npm run chatgpt:to-md -- ~/Downloads/chatgpt-export && npm run index -- ./docs/chatgpt-export-md"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": "20.x"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.6.1",
