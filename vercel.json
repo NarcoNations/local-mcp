@@ -1,0 +1,9 @@
+{
+  "installCommand": "npm install",
+  "buildCommand": "npm run build",
+  "framework": null,
+  "outputDirectory": "dist",
+  "env": {
+    "NODE_OPTIONS": "--enable-source-maps"
+  }
+}

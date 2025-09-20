@@ -1,0 +1,13 @@
+{
+  "name": "mcp-nn",
+  "description": "Offline MCP server for NarcoNations.org research corpus",
+  "transport": "stdio",
+  "tools": [
+    "search_local",
+    "get_doc",
+    "reindex",
+    "watch",
+    "stats",
+    "import_chatgpt_export"
+  ]
+}
