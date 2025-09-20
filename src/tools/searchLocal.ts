@@ -3,6 +3,7 @@ import { AppConfig } from "../config.js";
 import { embedQuery } from "../pipeline/embed.js";
 import { getStore } from "../store/store.js";
 import { buildCitation } from "../utils/cite.js";
+import { SearchResult } from "../types.js";
 
 export const SearchLocalShape = {
   query: z.string().min(1),
@@ -29,6 +30,11 @@ function normaliseScores(hits: { id: string; score: number }[]): Map<string, num
     map.set(hit.id, value);
   }
   return map;
+}
+
+export interface SearchLocalResult {
+  query: string;
+  results: SearchResult[];
 }
 
 export function createSearchLocalTool(config: AppConfig) {
@@ -74,6 +80,7 @@ export function createSearchLocalTool(config: AppConfig) {
         citation: buildCitation(chunk.path, chunk.page, chunk.text, chunk.offsetStart, chunk.offsetEnd),
       }));
 
-    return { query: parsed.query, results: sorted };
+    const result: SearchLocalResult = { query: parsed.query, results: sorted };
+    return result;
   };
 }

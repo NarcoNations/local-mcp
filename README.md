@@ -13,10 +13,31 @@ Offline Model Context Protocol (MCP) server for NarcoNations.org research. Index
 npm install
 npm run models:download   # optional: prefetch MiniLM weights for offline mode
 npm run index -- ./docs ./public/dossiers
-npm run dev               # start MCP server over stdio
+npm run dev               # start stdio MCP + HTTP GUI + SSE bridge
 ```
 
-In an MCP-enabled client (Custom GPT, Claude Desktop, etc.) declare the transport as stdio and point to `npm run dev`.
+Open the cinematic control room at [http://localhost:3000](http://localhost:3000) to run searches, view documents, and trigger
+reindex jobs. The stdio MCP server still runs on the same process (`npm run dev:mcp` launches just the stdio transport if you
+need a dedicated CLI instance).
+
+In an MCP-enabled client (Custom GPT, Claude Desktop, etc.) use the included `mcp.json` manifest and replace the
+`https://YOUR-HTTPS-ENDPOINT/mcp` placeholder with your HTTPS tunnel.
+
+### Control room features
+
+- Hybrid search with responsive filters, score visuals, and inline document previews.
+- One-click `get_doc` retrieval with copy-to-clipboard support for absolute paths.
+- Corpus stats cards (files, chunks, embeddings cached, last indexed timestamp, breakdown by file type).
+- Reindex, watch, and ChatGPT import forms with status feedback and activity stream logging over SSE.
+- Fully responsive layout — touch-friendly on phones, cinematic spacing on 4K monitors.
+
+### ChatGPT HTTPS bridge
+
+1. Start the HTTP server (`npm run dev` or `NODE_ENV=production node dist/http.js`).
+2. Expose port 3000 over HTTPS using your preferred tunnel (e.g. `cloudflared tunnel --url http://localhost:3000`).
+3. Update `mcp.json` → `transport.url` with the public `https://.../mcp` URL from the tunnel.
+4. (Optional) set `MCP_HTTP_ORIGIN=https://chat.openai.com` to tighten CORS for the SSE stream.
+5. Upload the manifest to ChatGPT or another MCP-compatible host and connect — the bridge relays all tool calls over SSE.
 
 ### Example tool calls
 
@@ -155,7 +176,14 @@ Vitest covers chunking, hybrid storage, PDF OCR fallback (mocked), and ChatGPT c
 
 ## Vercel deployment
 
-`vercel.json` is configured to run `npm run build` and publish `dist/` (which now contains static docs alongside compiled JS). The build avoids native dependencies, making the project safe for Vercel preview builds.
+`vercel.json` runs `npm run build` and publishes `dist/` (compiled TypeScript + static control-room assets). The Express bridge
+serves the GUI and SSE endpoints from a single serverless-compatible entrypoint, keeping deployments Vercel-ready.
+
+### HTTP bridge configuration
+
+- `PORT` – override the HTTP listener (default `3000`).
+- `MCP_HTTP_STATIC` – serve a custom directory instead of the bundled `/public` assets.
+- `MCP_HTTP_ORIGIN` – restrict CORS/SSE access to a specific origin when exposing the server publicly.
 
 ## Styling & conventions
 
