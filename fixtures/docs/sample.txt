@@ -1,0 +1,3 @@
+This is a plain text file.
+It contains insights about Antwerp's port security and cocaine interdiction.
+The purpose is to validate text indexer functionality.

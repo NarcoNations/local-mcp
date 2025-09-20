@@ -1,0 +1,17 @@
+{
+  "name": "mcp-nn",
+  "version": "1.1.0",
+  "transport": {
+    "type": "stdio",
+    "command": "node",
+    "args": ["./dist/server.js"]
+  },
+  "tools": [
+    "search_local",
+    "get_doc",
+    "reindex",
+    "watch",
+    "stats",
+    "import_chatgpt_export"
+  ]
+}
