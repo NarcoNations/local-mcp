@@ -13,10 +13,12 @@ Offline Model Context Protocol (MCP) server for NarcoNations.org research. Index
 npm install
 npm run models:download   # optional: prefetch MiniLM weights for offline mode
 npm run index -- ./docs ./public/dossiers
-npm run dev               # start MCP server over stdio
+npm run dev               # start stdio server + web console/SSE bridge on http://localhost:3000
 ```
 
-In an MCP-enabled client (Custom GPT, Claude Desktop, etc.) declare the transport as stdio and point to `npm run dev`.
+Open `http://localhost:3000` for the responsive control panel. `npm run dev` launches both the classic stdio transport and the
+new HTTP server that exposes the GUI, JSON APIs, and the SSE bridge required for ChatGPT connectors. To run only the stdio serve
+r, use `npm run dev:mcp` and the manifest in `mcp-stdio.json`.
 
 ### Example tool calls
 
@@ -37,6 +39,43 @@ In an MCP-enabled client (Custom GPT, Claude Desktop, etc.) declare the transpor
   "input": { "path": "./docs/ports/antwerp.pdf", "page": 12 }
 }
 ```
+
+## Web console & JSON APIs
+
+The HTTP server served from `src/http.ts` powers a responsive control panel at `http://localhost:3000` and exposes REST endpoints
+that mirror the MCP tools. The UI is fully responsive (mobile through ultra-wide) and includes:
+
+- **Hybrid search:** run `search_local`, adjust `k`, `alpha`, and apply document-type filters.
+- **Document viewer:** preview snippets returned by `get_doc` with highlighted spans.
+- **Indexer controls:** trigger `reindex`, start `watch`, and invoke `import_chatgpt_export` without leaving the browser.
+- **Stats dashboard:** live counts from `stats`, including per-type chunk totals and timestamp metadata.
+- **Event stream:** the UI subscribes to `/api/events` (Server-Sent Events) for watch notifications, reindex runs, and import logs.
+
+JSON endpoints are available if you prefer scripting against the bridge directly:
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| `POST` | `/api/search` | Call `search_local` with the standard payload. |
+| `POST` | `/api/get-doc` | Fetch raw text for a file or page via `get_doc`. |
+| `POST` | `/api/reindex` | Trigger `reindex` for the configured roots or custom paths. |
+| `POST` | `/api/watch` | Enable the chokidar watcher (`watch` tool) for roots or user-provided directories. |
+| `GET`  | `/api/stats` | Return the manifest summary from `stats`. |
+| `POST` | `/api/import-chatgpt` | Execute `import_chatgpt_export`. |
+| `GET`  | `/api/events` | SSE feed with runtime activity, watch events, and logs. |
+
+All endpoints respond with JSON (error objects include an `error` message) and support CORS for HTTPS deployments.
+
+## ChatGPT & SSE transport
+
+`mcp.json` now advertises the SSE endpoint (`https://localhost:3000/mcp` by default). Replace the hostname with your public
+reverse-tunnel domain when exposing the bridge to ChatGPT. A typical flow:
+
+1. Start the bridge: `npm run dev` (or `npm run dev:http` for the HTTP server only).
+2. Publish the HTTP/SSE server via TLS (e.g. `cloudflared tunnel --url http://localhost:3000` or `ngrok http 3000`).
+3. Update `mcp.json`'s `transport.url` with the HTTPS URL returned by your tunnel.
+4. Host the manifest somewhere reachable by ChatGPT (GitHub Pages, Vercel, etc.) and register it with a Custom GPT.
+
+The legacy stdio manifest is preserved as `mcp-stdio.json` for clients that still consume the process transport directly.
 
 ## ChatGPT → ZIP → Markdown → Index
 
