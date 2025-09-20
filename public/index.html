@@ -3,226 +3,903 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Local Research MCP – NarcoNations.org</title>
+    <title>Local Research MCP · NarcoNations Control Center</title>
     <style>
       :root {
         color-scheme: dark light;
-        --bg: #05060a;
-        --fg: #f5f5f5;
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        --bg: radial-gradient(circle at 10% 10%, rgba(60, 92, 255, 0.14), transparent 55%),
+          radial-gradient(circle at 90% 0%, rgba(74, 209, 255, 0.18), transparent 50%),
+          linear-gradient(180deg, #030508, #050b18 55%, #02040a 100%);
+        --panel-bg: rgba(10, 14, 25, 0.78);
+        --panel-border: rgba(255, 255, 255, 0.08);
+        --panel-shadow: 0 24px 80px rgba(2, 6, 12, 0.55);
         --accent: #4ad1ff;
-        --muted: rgba(255, 255, 255, 0.6);
-        --panel: rgba(14, 17, 26, 0.8);
-        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --accent-soft: rgba(74, 209, 255, 0.15);
+        --text: rgba(244, 247, 255, 0.92);
+        --muted: rgba(214, 224, 255, 0.65);
+        --border-radius: clamp(16px, 3vw, 28px);
+        --transition: 200ms ease;
+        background-color: #030509;
       }
+
       * {
         box-sizing: border-box;
       }
+
       body {
         margin: 0;
         min-height: 100vh;
-        background: radial-gradient(circle at 10% 20%, rgba(60, 92, 255, 0.15), transparent 50%),
-          radial-gradient(circle at 90% 10%, rgba(74, 209, 255, 0.2), transparent 45%),
-          linear-gradient(160deg, var(--bg), #0b0e15 45%, #000 100%);
-        color: var(--fg);
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .app-shell {
         display: flex;
         flex-direction: column;
+        min-height: 100vh;
+        padding: clamp(1.5rem, 2vw, 2rem) clamp(1rem, 4vw, 3rem) clamp(4rem, 7vw, 6rem);
+        gap: clamp(2rem, 3vw, 3rem);
       }
-      header {
-        padding: clamp(2rem, 6vw, 6rem) clamp(1.5rem, 8vw, 8rem) 0 clamp(1.5rem, 8vw, 8rem);
-        display: flex;
-        flex-direction: column;
-        gap: clamp(1.5rem, 4vw, 3rem);
+
+      header.hero {
+        display: grid;
+        gap: clamp(1.5rem, 3vw, 2.5rem);
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        align-items: center;
+        padding: clamp(2rem, 3vw, 3.5rem);
+        border-radius: var(--border-radius);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(140deg, rgba(9, 16, 28, 0.94), rgba(6, 11, 20, 0.72));
+        box-shadow: var(--panel-shadow);
+        position: relative;
+        overflow: hidden;
       }
-      header h1 {
-        font-size: clamp(2.5rem, 6vw, 4.5rem);
-        max-width: 28ch;
-        line-height: 1.05;
+
+      header.hero::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 80% 20%, rgba(74, 209, 255, 0.25), transparent 50%);
+        opacity: 0.8;
+        pointer-events: none;
+      }
+
+      header.hero > * {
+        position: relative;
+        z-index: 1;
+      }
+
+      .hero-text h1 {
+        font-size: clamp(2.1rem, 4vw, 3.3rem);
+        margin: 0 0 1rem;
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+      }
+
+      .hero-text p {
         margin: 0;
-      }
-      header p {
-        margin: 0;
-        max-width: 46ch;
-        font-size: clamp(1rem, 2.5vw, 1.2rem);
+        max-width: 52ch;
         color: var(--muted);
+        font-size: clamp(1rem, 1.8vw, 1.2rem);
       }
-      .cta-group {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
+
+      .eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 0.28em;
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.55);
+        margin-bottom: 0.8rem;
       }
-      a.button {
+
+      form#search-form {
+        display: grid;
+        gap: 0.8rem;
+        background: rgba(8, 12, 22, 0.72);
+        padding: clamp(1.2rem, 2vw, 1.8rem);
+        border-radius: clamp(18px, 2.5vw, 24px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+      }
+
+      .input-group {
+        display: grid;
+        gap: 0.6rem;
+      }
+
+      .input-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.75rem;
+      }
+
+      label {
+        font-size: 0.85rem;
+        color: rgba(220, 229, 255, 0.7);
+        display: grid;
+        gap: 0.4rem;
+      }
+
+      input[type="text"],
+      input[type="number"],
+      textarea,
+      select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(5, 9, 18, 0.9);
+        color: inherit;
+        font-size: 0.95rem;
+        transition: border var(--transition), box-shadow var(--transition);
+      }
+
+      input:focus,
+      textarea:focus,
+      select:focus {
+        outline: none;
+        border-color: rgba(74, 209, 255, 0.6);
+        box-shadow: 0 0 0 2px rgba(74, 209, 255, 0.18);
+      }
+
+      button {
+        font: inherit;
+        border: none;
+        cursor: pointer;
+      }
+
+      .primary-button {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 0.9rem 1.6rem;
+        gap: 0.5rem;
+        padding: 0.85rem 1.6rem;
         border-radius: 999px;
-        text-decoration: none;
-        background: var(--accent);
-        color: #02060c;
+        background: linear-gradient(135deg, #4ad1ff, #7cf9ff);
+        color: #021724;
         font-weight: 600;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        box-shadow: 0 18px 40px rgba(74, 209, 255, 0.3);
+        transition: transform 180ms ease, box-shadow 180ms ease;
+        box-shadow: 0 16px 40px rgba(74, 209, 255, 0.35);
       }
-      a.button.secondary {
-        background: transparent;
-        color: var(--fg);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        box-shadow: none;
+
+      .primary-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 22px 52px rgba(74, 209, 255, 0.42);
       }
-      a.button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 20px 44px rgba(74, 209, 255, 0.4);
-      }
-      main {
-        padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 8vw, 8rem) clamp(3rem, 8vw, 6rem) clamp(1.5rem, 8vw, 8rem);
+
+      .content-grid {
         display: grid;
-        gap: clamp(2rem, 4vw, 3.5rem);
+        gap: clamp(1.5rem, 3vw, 2.5rem);
       }
-      section {
-        background: var(--panel);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 24px;
-        padding: clamp(1.5rem, 4vw, 3rem);
-        backdrop-filter: blur(12px);
-        box-shadow: 0 24px 60px rgba(2, 6, 12, 0.45);
+
+      @media (min-width: 980px) {
+        .content-grid {
+          grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr);
+        }
       }
-      section h2 {
-        margin-top: 0;
-        font-size: clamp(1.4rem, 3vw, 2rem);
-      }
-      .grid {
-        display: grid;
-        gap: 1.5rem;
-      }
-      .grid.two {
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      }
-      .card {
-        padding: 1.2rem;
-        border-radius: 18px;
-        background: rgba(12, 16, 24, 0.85);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+
+      .panel {
+        background: var(--panel-bg);
+        border-radius: var(--border-radius);
+        border: 1px solid var(--panel-border);
+        box-shadow: var(--panel-shadow);
         display: flex;
         flex-direction: column;
+        gap: 1.4rem;
+        padding: clamp(1.4rem, 2.5vw, 2.2rem);
+        backdrop-filter: blur(16px);
+      }
+
+      .panel-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      .panel h2 {
+        margin: 0;
+        font-size: clamp(1.25rem, 2.4vw, 1.7rem);
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        align-items: center;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.4rem 0.75rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        font-size: 0.78rem;
+      }
+
+      .results-list {
+        display: grid;
+        gap: 1.2rem;
+      }
+
+      .result-card {
+        display: grid;
+        gap: 0.75rem;
+        padding: clamp(1rem, 1.8vw, 1.4rem);
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(6, 10, 18, 0.72);
+        transition: border var(--transition), transform var(--transition);
+      }
+
+      .result-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(74, 209, 255, 0.5);
+      }
+
+      .result-path {
+        font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+        font-size: 0.78rem;
+        color: rgba(214, 224, 255, 0.68);
+        overflow-wrap: anywhere;
+      }
+
+      .result-snippet {
+        font-size: 0.95rem;
+        line-height: 1.45;
+        color: rgba(240, 246, 255, 0.84);
+      }
+
+      .result-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        color: rgba(198, 210, 235, 0.7);
+      }
+
+      .result-actions {
+        display: flex;
         gap: 0.6rem;
       }
-      .card h3 {
-        margin: 0;
-        font-size: 1.1rem;
+
+      .secondary-button {
+        padding: 0.6rem 1.1rem;
+        border-radius: 999px;
+        border: 1px solid rgba(74, 209, 255, 0.4);
+        background: rgba(6, 12, 20, 0.65);
+        color: var(--accent);
+        font-weight: 600;
+        transition: background var(--transition), border var(--transition);
       }
-      .card p {
-        margin: 0;
-        color: var(--muted);
-        font-size: 0.95rem;
+
+      .secondary-button:hover {
+        background: rgba(74, 209, 255, 0.15);
+        border-color: rgba(74, 209, 255, 0.65);
       }
-      code {
-        display: inline-block;
-        padding: 0.3rem 0.6rem;
-        border-radius: 10px;
-        background: rgba(255, 255, 255, 0.06);
+
+      .side-stack {
+        display: grid;
+        gap: 1.4rem;
+      }
+
+      .mini-panel {
+        background: rgba(4, 8, 16, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+        padding: 1.2rem clamp(1.1rem, 2vw, 1.6rem);
+        display: grid;
+        gap: 0.8rem;
+      }
+
+      .mini-panel h3 {
+        margin: 0;
+        font-size: 1.05rem;
+      }
+
+      .mini-panel p {
+        margin: 0;
+        color: rgba(204, 216, 240, 0.68);
+        font-size: 0.88rem;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+        gap: 0.9rem;
+      }
+
+      .stat-card {
+        background: rgba(74, 209, 255, 0.08);
+        border-radius: 16px;
+        padding: 0.9rem 1rem;
+        display: grid;
+        gap: 0.3rem;
+        border: 1px solid rgba(74, 209, 255, 0.15);
+      }
+
+      .stat-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        color: rgba(220, 240, 255, 0.65);
+      }
+
+      .stat-value {
+        font-size: clamp(1.1rem, 2vw, 1.5rem);
+        font-weight: 600;
+      }
+
+      .log-feed {
+        max-height: 340px;
+        overflow-y: auto;
+        border-radius: 14px;
+        background: rgba(0, 0, 0, 0.28);
+        border: 1px solid rgba(255, 255, 255, 0.04);
         font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
-        font-size: 0.95rem;
+        font-size: 0.78rem;
+        line-height: 1.5;
       }
-      footer {
-        padding: clamp(1.5rem, 4vw, 2.5rem);
-        text-align: center;
+
+      .log-feed ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .log-feed li {
+        padding: 0.55rem 0.85rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        display: grid;
+        gap: 0.25rem;
+      }
+
+      .log-feed li:last-child {
+        border-bottom: none;
+      }
+
+      .log-level {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 0.18em;
+      }
+
+      .log-level.info {
+        color: rgba(74, 209, 255, 0.9);
+      }
+
+      .log-level.warn {
+        color: rgba(255, 195, 87, 0.9);
+      }
+
+      .log-level.error {
+        color: rgba(255, 120, 120, 0.9);
+      }
+
+      .log-level.debug {
+        color: rgba(160, 200, 255, 0.75);
+      }
+
+      .status-bar {
+        min-height: 2.4rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 0.35rem 1rem;
         font-size: 0.9rem;
-        color: rgba(255, 255, 255, 0.45);
+        color: rgba(10, 20, 32, 0.94);
+        background: rgba(74, 209, 255, 0.18);
+        border: 1px solid rgba(74, 209, 255, 0.35);
+        transition: opacity 160ms ease;
       }
-      @media (min-width: 900px) {
-        main {
-          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+
+      .status-bar.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .status-bar.error {
+        background: rgba(255, 120, 120, 0.18);
+        border-color: rgba(255, 120, 120, 0.38);
+        color: rgba(255, 220, 220, 0.95);
+      }
+
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(3, 6, 12, 0.82);
+        display: grid;
+        place-items: center;
+        padding: clamp(1rem, 3vw, 2.5rem);
+        z-index: 50;
+      }
+
+      .modal.hidden {
+        display: none;
+      }
+
+      .modal-content {
+        width: min(960px, 100%);
+        max-height: 90vh;
+        background: rgba(8, 12, 22, 0.95);
+        border-radius: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 28px 60px rgba(2, 6, 12, 0.65);
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
+
+      .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1.3rem clamp(1.4rem, 2.5vw, 2rem);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .modal-body {
+        padding: 1.3rem clamp(1.4rem, 2.5vw, 2rem);
+        overflow-y: auto;
+      }
+
+      pre.doc-text {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+        font-size: 0.85rem;
+        line-height: 1.45;
+      }
+
+      .close-button {
+        padding: 0.45rem 0.9rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        background: transparent;
+        color: rgba(240, 248, 255, 0.85);
+        font-weight: 600;
+      }
+
+      .filters .filter-option {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        font-size: 0.78rem;
+      }
+
+      .filters input[type="checkbox"] {
+        accent-color: #4ad1ff;
+        width: 0.85rem;
+        height: 0.85rem;
+      }
+
+      @media (max-width: 720px) {
+        header.hero {
+          grid-template-columns: 1fr;
         }
-        main section:first-child {
-          grid-column: span 2;
+
+        form#search-form {
+          order: 3;
+        }
+
+        .side-stack {
+          grid-template-columns: 1fr;
+        }
+
+        .log-feed {
+          max-height: 260px;
         }
       }
     </style>
   </head>
   <body>
-    <header>
-      <h1>Local Research MCP for NarcoNations.org</h1>
-      <p>
-        Secure, offline indexing and retrieval for your entire NarcoNations research corpus. This service loads PDFs, Markdown,
-        Word, plain text, and Apple Pages files, builds hybrid search indexes, and returns grounded citations through the Model
-        Context Protocol.
-      </p>
-      <div class="cta-group">
-        <a class="button" href="https://modelcontextprotocol.io" target="_blank" rel="noreferrer">Model Context Protocol</a>
-        <a class="button secondary" href="https://github.com/modelcontextprotocol/typescript-sdk" target="_blank" rel="noreferrer"
-          >TypeScript SDK</a
-        >
+    <div class="app-shell">
+      <header class="hero">
+        <div class="hero-text">
+          <div class="eyebrow">NarcoNations · Local MCP</div>
+          <h1>Search, monitor, and manage your offline research corpus.</h1>
+          <p>
+            Run dense + keyword retrieval, inspect source documents, trigger reindexing, and watch the index in real time. The
+            dashboard is mobile-first and scales cinematically on larger displays for operations centres.
+          </p>
+        </div>
+        <form id="search-form">
+          <div class="input-group">
+            <label>
+              Query
+              <input id="query" name="query" type="text" required placeholder="Search PDFs, Markdown, transcripts…" />
+            </label>
+          </div>
+          <div class="input-row">
+            <label>
+              Results (k)
+              <input id="k" name="k" type="number" min="1" max="32" value="8" />
+            </label>
+            <label>
+              Hybrid alpha
+              <input id="alpha" name="alpha" type="number" min="0" max="1" step="0.05" value="0.65" />
+            </label>
+          </div>
+          <div class="filters" aria-label="Type filters">
+            <span class="chip">Filter types:</span>
+            <label class="filter-option"><input type="checkbox" name="type" value="pdf" /> PDF</label>
+            <label class="filter-option"><input type="checkbox" name="type" value="markdown" /> Markdown</label>
+            <label class="filter-option"><input type="checkbox" name="type" value="text" /> Text</label>
+            <label class="filter-option"><input type="checkbox" name="type" value="word" /> Word</label>
+            <label class="filter-option"><input type="checkbox" name="type" value="pages" /> Pages</label>
+          </div>
+          <button class="primary-button" type="submit">Run search</button>
+        </form>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Files indexed</div>
+            <div class="stat-value" id="stat-files">–</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Chunks</div>
+            <div class="stat-value" id="stat-chunks">–</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Embeddings cached</div>
+            <div class="stat-value" id="stat-embeddings">–</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Last indexed</div>
+            <div class="stat-value" id="stat-updated">–</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="status-bar hidden" id="status-bar" role="status" aria-live="polite"></div>
+
+      <main class="content-grid">
+        <section class="panel" aria-live="polite">
+          <div class="panel-header">
+            <h2>Search results</h2>
+            <div class="filters" id="results-summary"></div>
+          </div>
+          <div class="results-list" id="results-list">
+            <p style="margin:0;color:var(--muted);">Run a query to see ranked results with citations.</p>
+          </div>
+        </section>
+        <aside class="panel side-stack">
+          <div class="mini-panel">
+            <h3>Reindex corpus</h3>
+            <p>Leave blank to index all configured roots, or point to a specific directory/file.</p>
+            <form id="reindex-form" class="input-group">
+              <label>
+                Path (optional)
+                <input type="text" id="reindex-path" placeholder="/absolute/path/to/rescan" />
+              </label>
+              <button class="primary-button" type="submit">Reindex now</button>
+            </form>
+          </div>
+          <div class="mini-panel">
+            <h3>Start file watch</h3>
+            <p>Stream file changes into the index automatically using chokidar.</p>
+            <form id="watch-form" class="input-group">
+              <label>
+                Path (optional)
+                <input type="text" id="watch-path" placeholder="Defaults to configured roots" />
+              </label>
+              <button class="secondary-button" type="submit">Start watching</button>
+            </form>
+            <p id="watch-status">No watcher active.</p>
+          </div>
+          <div class="mini-panel">
+            <h3>Corpus breakdown</h3>
+            <div id="stats-breakdown" style="font-size:0.85rem;color:var(--muted);"></div>
+          </div>
+          <div class="mini-panel">
+            <h3>Live activity</h3>
+            <div class="log-feed" id="log-feed">
+              <ul id="log-list"></ul>
+            </div>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <div class="modal hidden" id="doc-modal" role="dialog" aria-modal="true" aria-labelledby="doc-modal-title">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <div class="result-path" id="doc-modal-path"></div>
+            <div style="font-size:0.8rem;color:var(--muted);" id="doc-modal-meta"></div>
+          </div>
+          <button class="close-button" type="button" id="doc-modal-close">Close</button>
+        </div>
+        <div class="modal-body">
+          <pre class="doc-text" id="doc-modal-text"></pre>
+        </div>
       </div>
-    </header>
-    <main>
-      <section>
-        <h2>Quickstart</h2>
-        <div class="grid two">
-          <div class="card">
-            <h3>Install dependencies</h3>
-            <p><code>npm install</code></p>
-          </div>
-          <div class="card">
-            <h3>Prefetch MiniLM (optional)</h3>
-            <p><code>npm run models:download</code></p>
-          </div>
-          <div class="card">
-            <h3>Index your corpus</h3>
-            <p><code>npm run index -- ./docs ./public/dossiers</code></p>
-          </div>
-          <div class="card">
-            <h3>Start the MCP server</h3>
-            <p><code>npm run dev</code></p>
-          </div>
-        </div>
-      </section>
-      <section>
-        <h2>Available MCP Tools</h2>
-        <div class="grid two">
-          <div class="card">
-            <h3>search_local</h3>
-            <p>Hybrid dense + keyword retrieval with precise citations for every chunk.</p>
-          </div>
-          <div class="card">
-            <h3>get_doc</h3>
-            <p>Return the full text for a file or a single PDF/Pages page.</p>
-          </div>
-          <div class="card">
-            <h3>reindex &amp; watch</h3>
-            <p>Refresh the corpus on demand or stream file system changes into the index.</p>
-          </div>
-          <div class="card">
-            <h3>stats</h3>
-            <p>Expose manifest metrics: files indexed, chunks by type, and embedding cache counts.</p>
-          </div>
-          <div class="card">
-            <h3>import_chatgpt_export</h3>
-            <p>Convert ChatGPT exports into Markdown and automatically reindex the output directory.</p>
-          </div>
-        </div>
-      </section>
-      <section>
-        <h2>Designed for the Field</h2>
-        <div class="grid two">
-          <div class="card">
-            <h3>Offline-first</h3>
-            <p>No external APIs or cloud calls. Embeddings are generated locally with Xenova MiniLM.</p>
-          </div>
-          <div class="card">
-            <h3>Format coverage</h3>
-            <p>OCR-aware PDF parsing, Markdown with front-matter, clean DOCX extraction, and best-effort Pages support.</p>
-          </div>
-          <div class="card">
-            <h3>Deterministic citations</h3>
-            <p>Every result includes the file path, page, character offsets, and a context snippet.</p>
-          </div>
-          <div class="card">
-            <h3>Secure boundaries</h3>
-            <p>Roots whitelist, symlink guards, and ZipSlip protection keep the index locked to approved folders.</p>
-          </div>
-        </div>
-      </section>
-    </main>
-    <footer>Built for NarcoNations.org · Local Research MCP v1.1 · Deployable on Vercel or offline</footer>
+    </div>
+
+    <script>
+      const API_PREFIX = "/api";
+      const LOG_STREAM_ENDPOINT = "/logs/stream";
+
+      const statusBar = document.getElementById("status-bar");
+      const resultsList = document.getElementById("results-list");
+      const resultsSummary = document.getElementById("results-summary");
+      const statFiles = document.getElementById("stat-files");
+      const statChunks = document.getElementById("stat-chunks");
+      const statEmbeddings = document.getElementById("stat-embeddings");
+      const statUpdated = document.getElementById("stat-updated");
+      const statsBreakdown = document.getElementById("stats-breakdown");
+      const logList = document.getElementById("log-list");
+      const watchStatus = document.getElementById("watch-status");
+      const docModal = document.getElementById("doc-modal");
+      const docModalClose = document.getElementById("doc-modal-close");
+      const docModalPath = document.getElementById("doc-modal-path");
+      const docModalMeta = document.getElementById("doc-modal-meta");
+      const docModalText = document.getElementById("doc-modal-text");
+
+      const logEntries = [];
+      const MAX_LOGS = 200;
+
+      function setStatus(message, type = "info") {
+        if (!message) {
+          statusBar.classList.add("hidden");
+          statusBar.textContent = "";
+          statusBar.classList.remove("error");
+          return;
+        }
+        statusBar.textContent = message;
+        statusBar.classList.remove("hidden");
+        statusBar.classList.toggle("error", type === "error");
+      }
+
+      async function fetchJson(url, options) {
+        const response = await fetch(url, {
+          headers: { "Content-Type": "application/json" },
+          ...options,
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || response.statusText);
+        }
+        if (response.headers.get("Content-Type")?.includes("application/json")) {
+          return await response.json();
+        }
+        return await response.text();
+      }
+
+      function renderBreakdown(stats) {
+        if (!stats?.byType) {
+          statsBreakdown.textContent = "No index loaded yet.";
+          return;
+        }
+        const entries = Object.entries(stats.byType);
+        if (!entries.length) {
+          statsBreakdown.textContent = "No indexed files found.";
+          return;
+        }
+        statsBreakdown.innerHTML = entries
+          .map(([type, value]) => `<div style="display:flex;justify-content:space-between;"><span>${type}</span><span>${value}</span></div>`)
+          .join("");
+      }
+
+      function updateStats(stats) {
+        if (!stats) return;
+        const files = stats.files ? Object.keys(stats.files).length : 0;
+        statFiles.textContent = files.toLocaleString();
+        statChunks.textContent = (stats.chunks ?? 0).toLocaleString();
+        statEmbeddings.textContent = (stats.embeddingsCached ?? 0).toLocaleString();
+        if (stats.lastIndexedAt) {
+          const dt = new Date(stats.lastIndexedAt);
+          statUpdated.textContent = `${dt.toLocaleDateString()} ${dt.toLocaleTimeString()}`;
+        } else {
+          statUpdated.textContent = "–";
+        }
+        renderBreakdown(stats);
+      }
+
+      function renderResults(result) {
+        if (!result?.results?.length) {
+          resultsList.innerHTML = `<p style="margin:0;color:var(--muted);">No matches. Try a broader query or adjust filters.</p>`;
+          resultsSummary.textContent = "";
+          return;
+        }
+        resultsSummary.textContent = `${result.results.length} result(s)`;
+        resultsList.innerHTML = "";
+        for (const item of result.results) {
+          const card = document.createElement("article");
+          card.className = "result-card";
+
+          const pathEl = document.createElement("div");
+          pathEl.className = "result-path";
+          pathEl.textContent = item.citation?.filePath ?? "Unknown path";
+          card.appendChild(pathEl);
+
+          const snippet = document.createElement("div");
+          snippet.className = "result-snippet";
+          snippet.textContent = item.citation?.snippet || item.text || "(No snippet)";
+          card.appendChild(snippet);
+
+          const meta = document.createElement("div");
+          meta.className = "result-meta";
+          const score = Math.round((item.score ?? 0) * 100);
+          const left = document.createElement("span");
+          left.textContent = `Score ${score}% · ${item.citation?.page ? `Page ${item.citation.page}` : "Full document"}`;
+          const actions = document.createElement("div");
+          actions.className = "result-actions";
+          const viewBtn = document.createElement("button");
+          viewBtn.className = "secondary-button";
+          viewBtn.type = "button";
+          viewBtn.textContent = "View source";
+          viewBtn.addEventListener("click", () => openDocument(item.citation?.filePath, item.citation?.page));
+          actions.appendChild(viewBtn);
+          meta.appendChild(left);
+          meta.appendChild(actions);
+          card.appendChild(meta);
+
+          resultsList.appendChild(card);
+        }
+      }
+
+      async function openDocument(path, page) {
+        if (!path) return;
+        try {
+          setStatus("Loading document…");
+          const payload = page ? { path, page } : { path };
+          const doc = await fetchJson(`${API_PREFIX}/get-doc`, { method: "POST", body: JSON.stringify(payload) });
+          docModalPath.textContent = doc.path ?? path;
+          docModalMeta.textContent = page ? `Page ${page}` : "Full document";
+          docModalText.textContent = doc.text || "(Document empty)";
+          docModal.classList.remove("hidden");
+          setStatus("");
+        } catch (err) {
+          console.error(err);
+          setStatus(err.message || "Unable to load document", "error");
+        }
+      }
+
+      function closeModal() {
+        docModal.classList.add("hidden");
+      }
+
+      function pushLog(record) {
+        logEntries.push(record);
+        if (logEntries.length > MAX_LOGS) {
+          logEntries.shift();
+        }
+        const frag = document.createDocumentFragment();
+        for (const entry of logEntries.slice(-50)) {
+          const li = document.createElement("li");
+          const level = document.createElement("span");
+          level.className = `log-level ${entry.level}`;
+          level.textContent = entry.level;
+          const msg = document.createElement("div");
+          msg.textContent = entry.msg;
+          const meta = document.createElement("div");
+          const time = new Date(entry.time ?? Date.now()).toLocaleTimeString();
+          const payload = { ...entry };
+          delete payload.level;
+          delete payload.msg;
+          delete payload.time;
+          delete payload.pid;
+          meta.textContent = `${time} · ${JSON.stringify(payload)}`;
+          meta.style.fontSize = "0.7rem";
+          meta.style.color = "rgba(190,205,230,0.7)";
+          li.appendChild(level);
+          li.appendChild(msg);
+          li.appendChild(meta);
+          frag.appendChild(li);
+        }
+        logList.innerHTML = "";
+        logList.appendChild(frag);
+        logList.parentElement.scrollTop = logList.parentElement.scrollHeight;
+      }
+
+      function connectLogStream() {
+        try {
+          const source = new EventSource(`${LOG_STREAM_ENDPOINT}`);
+          source.addEventListener("log", (event) => {
+            try {
+              const record = JSON.parse(event.data);
+              pushLog(record);
+            } catch (err) {
+              console.warn("log-parse-error", err);
+            }
+          });
+          source.onerror = () => {
+            setStatus("Log stream disconnected – retrying…", "error");
+          };
+        } catch (err) {
+          console.warn("log-stream-error", err);
+        }
+      }
+
+      async function loadStats() {
+        try {
+          const stats = await fetchJson(`${API_PREFIX}/stats`);
+          updateStats(stats);
+        } catch (err) {
+          console.warn("stats-error", err);
+        }
+      }
+
+      document.getElementById("search-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const query = form.query.value.trim();
+        if (!query) {
+          setStatus("Enter a query to search.", "error");
+          return;
+        }
+        const k = Number(form.k.value || 8);
+        const alpha = Number(form.alpha.value || 0.65);
+        const types = Array.from(form.querySelectorAll('input[name="type"]:checked')).map((el) => el.value);
+        const payload = { query, k, alpha };
+        if (types.length) {
+          payload.filters = { type: types };
+        }
+        try {
+          setStatus("Searching…");
+          const result = await fetchJson(`${API_PREFIX}/search`, { method: "POST", body: JSON.stringify(payload) });
+          renderResults(result);
+          setStatus(`Found ${result.results.length} result(s).`);
+        } catch (err) {
+          console.error(err);
+          setStatus(err.message || "Search failed", "error");
+        }
+      });
+
+      document.getElementById("reindex-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const input = document.getElementById("reindex-path").value.trim();
+        const payload = input ? { paths: [input] } : {};
+        try {
+          setStatus("Reindexing…");
+          const result = await fetchJson(`${API_PREFIX}/reindex`, { method: "POST", body: JSON.stringify(payload) });
+          setStatus(`Reindexed: ${JSON.stringify(result)}`);
+          loadStats();
+        } catch (err) {
+          console.error(err);
+          setStatus(err.message || "Reindex failed", "error");
+        }
+      });
+
+      document.getElementById("watch-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const input = document.getElementById("watch-path").value.trim();
+        const payload = input ? { paths: [input] } : {};
+        try {
+          const info = await fetchJson(`${API_PREFIX}/watch`, { method: "POST", body: JSON.stringify(payload) });
+          watchStatus.textContent = `Watching ${info.watching?.length ?? 0} path(s).`;
+          setStatus("File watcher started.");
+        } catch (err) {
+          console.error(err);
+          setStatus(err.message || "Failed to start watcher", "error");
+        }
+      });
+
+      docModalClose.addEventListener("click", closeModal);
+      docModal.addEventListener("click", (event) => {
+        if (event.target === docModal) {
+          closeModal();
+        }
+      });
+
+      connectLogStream();
+      loadStats();
+    </script>
   </body>
 </html>

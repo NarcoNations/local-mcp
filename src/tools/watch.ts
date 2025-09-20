@@ -14,9 +14,14 @@ export const WatchInputSchema = z.object(WatchShape);
 
 type WatchEmitter = (event: Record<string, unknown>, extra?: Record<string, unknown>) => void;
 
-export function createWatchTool(config: AppConfig, emit?: WatchEmitter) {
+export type WatchHandler = {
+  (input: unknown, extra?: Record<string, unknown>): Promise<{ watching: string[] }>;
+  stop: () => Promise<void>;
+};
+
+export function createWatchTool(config: AppConfig, emit?: WatchEmitter): WatchHandler {
   let watcher: FSWatcher | null = null;
-  return async function watch(input: unknown, extra?: Record<string, unknown>) {
+  const handler = async function watch(input: unknown, extra?: Record<string, unknown>) {
     const parsed = WatchInputSchema.parse(input ?? {});
     const targets = parsed.paths.length ? parsed.paths : config.roots.roots;
     const resolvedTargets = await Promise.all(targets.map((t) => ensureWithinRoots(config.roots.roots, t)));
@@ -40,4 +45,16 @@ export function createWatchTool(config: AppConfig, emit?: WatchEmitter) {
     });
     return { watching: resolvedTargets };
   };
+
+  handler.stop = async () => {
+    try {
+      await watcher?.close();
+    } catch (err) {
+      logger.debug("watch-stop-error", { err: String(err) });
+    } finally {
+      watcher = null;
+    }
+  };
+
+  return handler;
 }

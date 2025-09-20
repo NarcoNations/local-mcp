@@ -1,4 +1,5 @@
 node_modules
 dist
 .mcp-nn
+.mcp-nn-test
 .DS_Store
