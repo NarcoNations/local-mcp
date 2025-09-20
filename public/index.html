@@ -3,226 +3,138 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Local Research MCP – NarcoNations.org</title>
-    <style>
-      :root {
-        color-scheme: dark light;
-        --bg: #05060a;
-        --fg: #f5f5f5;
-        --accent: #4ad1ff;
-        --muted: rgba(255, 255, 255, 0.6);
-        --panel: rgba(14, 17, 26, 0.8);
-        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        min-height: 100vh;
-        background: radial-gradient(circle at 10% 20%, rgba(60, 92, 255, 0.15), transparent 50%),
-          radial-gradient(circle at 90% 10%, rgba(74, 209, 255, 0.2), transparent 45%),
-          linear-gradient(160deg, var(--bg), #0b0e15 45%, #000 100%);
-        color: var(--fg);
-        display: flex;
-        flex-direction: column;
-      }
-      header {
-        padding: clamp(2rem, 6vw, 6rem) clamp(1.5rem, 8vw, 8rem) 0 clamp(1.5rem, 8vw, 8rem);
-        display: flex;
-        flex-direction: column;
-        gap: clamp(1.5rem, 4vw, 3rem);
-      }
-      header h1 {
-        font-size: clamp(2.5rem, 6vw, 4.5rem);
-        max-width: 28ch;
-        line-height: 1.05;
-        margin: 0;
-      }
-      header p {
-        margin: 0;
-        max-width: 46ch;
-        font-size: clamp(1rem, 2.5vw, 1.2rem);
-        color: var(--muted);
-      }
-      .cta-group {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-      }
-      a.button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0.9rem 1.6rem;
-        border-radius: 999px;
-        text-decoration: none;
-        background: var(--accent);
-        color: #02060c;
-        font-weight: 600;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        box-shadow: 0 18px 40px rgba(74, 209, 255, 0.3);
-      }
-      a.button.secondary {
-        background: transparent;
-        color: var(--fg);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        box-shadow: none;
-      }
-      a.button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 20px 44px rgba(74, 209, 255, 0.4);
-      }
-      main {
-        padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 8vw, 8rem) clamp(3rem, 8vw, 6rem) clamp(1.5rem, 8vw, 8rem);
-        display: grid;
-        gap: clamp(2rem, 4vw, 3.5rem);
-      }
-      section {
-        background: var(--panel);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 24px;
-        padding: clamp(1.5rem, 4vw, 3rem);
-        backdrop-filter: blur(12px);
-        box-shadow: 0 24px 60px rgba(2, 6, 12, 0.45);
-      }
-      section h2 {
-        margin-top: 0;
-        font-size: clamp(1.4rem, 3vw, 2rem);
-      }
-      .grid {
-        display: grid;
-        gap: 1.5rem;
-      }
-      .grid.two {
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      }
-      .card {
-        padding: 1.2rem;
-        border-radius: 18px;
-        background: rgba(12, 16, 24, 0.85);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        display: flex;
-        flex-direction: column;
-        gap: 0.6rem;
-      }
-      .card h3 {
-        margin: 0;
-        font-size: 1.1rem;
-      }
-      .card p {
-        margin: 0;
-        color: var(--muted);
-        font-size: 0.95rem;
-      }
-      code {
-        display: inline-block;
-        padding: 0.3rem 0.6rem;
-        border-radius: 10px;
-        background: rgba(255, 255, 255, 0.06);
-        font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
-        font-size: 0.95rem;
-      }
-      footer {
-        padding: clamp(1.5rem, 4vw, 2.5rem);
-        text-align: center;
-        font-size: 0.9rem;
-        color: rgba(255, 255, 255, 0.45);
-      }
-      @media (min-width: 900px) {
-        main {
-          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        }
-        main section:first-child {
-          grid-column: span 2;
-        }
-      }
-    </style>
+    <title>NarcoNations Local Research MCP</title>
+    <link rel="stylesheet" href="app.css" />
   </head>
   <body>
-    <header>
-      <h1>Local Research MCP for NarcoNations.org</h1>
-      <p>
-        Secure, offline indexing and retrieval for your entire NarcoNations research corpus. This service loads PDFs, Markdown,
-        Word, plain text, and Apple Pages files, builds hybrid search indexes, and returns grounded citations through the Model
-        Context Protocol.
-      </p>
-      <div class="cta-group">
-        <a class="button" href="https://modelcontextprotocol.io" target="_blank" rel="noreferrer">Model Context Protocol</a>
-        <a class="button secondary" href="https://github.com/modelcontextprotocol/typescript-sdk" target="_blank" rel="noreferrer"
-          >TypeScript SDK</a
-        >
-      </div>
-    </header>
-    <main>
-      <section>
-        <h2>Quickstart</h2>
-        <div class="grid two">
-          <div class="card">
-            <h3>Install dependencies</h3>
-            <p><code>npm install</code></p>
-          </div>
-          <div class="card">
-            <h3>Prefetch MiniLM (optional)</h3>
-            <p><code>npm run models:download</code></p>
-          </div>
-          <div class="card">
-            <h3>Index your corpus</h3>
-            <p><code>npm run index -- ./docs ./public/dossiers</code></p>
-          </div>
-          <div class="card">
-            <h3>Start the MCP server</h3>
-            <p><code>npm run dev</code></p>
-          </div>
+    <div class="app-shell">
+      <header class="hero">
+        <div class="hero__copy">
+          <h1>NarcoNations local research control room</h1>
+          <p>
+            Operate your offline corpus with cinematic clarity. Search, audit, and stream updates from the Model Context Protocol
+            server, then hand the same endpoint directly to ChatGPT via the secure SSE bridge.
+          </p>
         </div>
-      </section>
-      <section>
-        <h2>Available MCP Tools</h2>
-        <div class="grid two">
-          <div class="card">
-            <h3>search_local</h3>
-            <p>Hybrid dense + keyword retrieval with precise citations for every chunk.</p>
-          </div>
-          <div class="card">
-            <h3>get_doc</h3>
-            <p>Return the full text for a file or a single PDF/Pages page.</p>
-          </div>
-          <div class="card">
-            <h3>reindex &amp; watch</h3>
-            <p>Refresh the corpus on demand or stream file system changes into the index.</p>
-          </div>
-          <div class="card">
-            <h3>stats</h3>
-            <p>Expose manifest metrics: files indexed, chunks by type, and embedding cache counts.</p>
-          </div>
-          <div class="card">
-            <h3>import_chatgpt_export</h3>
-            <p>Convert ChatGPT exports into Markdown and automatically reindex the output directory.</p>
-          </div>
+        <div class="hero__actions">
+          <button class="primary" id="search-primary">Run a search</button>
+          <a class="button secondary" href="https://modelcontextprotocol.io" target="_blank" rel="noreferrer">MCP Docs</a>
+          <a class="button secondary" href="https://github.com/modelcontextprotocol/typescript-sdk" target="_blank" rel="noreferrer"
+            >TypeScript SDK</a
+          >
         </div>
-      </section>
-      <section>
-        <h2>Designed for the Field</h2>
-        <div class="grid two">
-          <div class="card">
-            <h3>Offline-first</h3>
-            <p>No external APIs or cloud calls. Embeddings are generated locally with Xenova MiniLM.</p>
+      </header>
+
+      <main>
+        <section class="panel search-panel">
+          <div class="section-header">
+            <h2>Hybrid search</h2>
+            <p class="status-message" id="search-status">Ready.</p>
           </div>
-          <div class="card">
-            <h3>Format coverage</h3>
-            <p>OCR-aware PDF parsing, Markdown with front-matter, clean DOCX extraction, and best-effort Pages support.</p>
+          <form class="search-form" id="search-form">
+            <div class="search-row">
+              <input type="text" id="search-query" name="query" placeholder="Search NarcoNations dossiers…" required />
+              <button type="submit">Search local index</button>
+            </div>
+            <div class="search-row">
+              <label>
+                <span>Top K</span>
+                <input type="number" id="search-k" name="k" min="1" max="32" value="8" />
+              </label>
+              <label class="alpha-control">
+                <span>Hybrid weighting</span>
+                <input type="range" id="search-alpha" name="alpha" min="0" max="1" step="0.05" value="0.65" />
+                <span class="alpha-control__value">Dense/keyword mix: <span id="alpha-value">0.65</span></span>
+              </label>
+            </div>
+            <div class="filters" id="filter-types">
+              <label class="filter-chip">
+                <input type="checkbox" value="pdf" checked />
+                <span>PDF</span>
+              </label>
+              <label class="filter-chip">
+                <input type="checkbox" value="markdown" checked />
+                <span>Markdown</span>
+              </label>
+              <label class="filter-chip">
+                <input type="checkbox" value="text" checked />
+                <span>Text</span>
+              </label>
+              <label class="filter-chip">
+                <input type="checkbox" value="word" checked />
+                <span>Word</span>
+              </label>
+              <label class="filter-chip">
+                <input type="checkbox" value="pages" checked />
+                <span>Pages</span>
+              </label>
+            </div>
+          </form>
+          <div class="results" id="results"></div>
+        </section>
+
+        <section class="panel detail-panel">
+          <h2>Document viewer &amp; stats</h2>
+          <div class="doc-viewer" id="doc-viewer">
+            <p class="status-message">Select a search result to stream the full source text.</p>
           </div>
-          <div class="card">
-            <h3>Deterministic citations</h3>
-            <p>Every result includes the file path, page, character offsets, and a context snippet.</p>
+          <div>
+            <h3 class="status-message">Corpus metrics</h3>
+            <div class="stats-grid" id="stats-grid"></div>
           </div>
-          <div class="card">
-            <h3>Secure boundaries</h3>
-            <p>Roots whitelist, symlink guards, and ZipSlip protection keep the index locked to approved folders.</p>
+        </section>
+
+        <section class="panel control-panel">
+          <div>
+            <h2>Index controls</h2>
+            <form id="reindex-form" class="form-block">
+              <label for="reindex-paths">Paths (optional, newline or comma separated)</label>
+              <textarea id="reindex-paths" placeholder="Leave blank to reindex configured roots"></textarea>
+              <div class="form-actions">
+                <button type="submit">Reindex now</button>
+                <span class="status-message" id="reindex-status"></span>
+              </div>
+            </form>
           </div>
-        </div>
-      </section>
-    </main>
-    <footer>Built for NarcoNations.org · Local Research MCP v1.1 · Deployable on Vercel or offline</footer>
+
+          <div>
+            <h3>Watch for changes</h3>
+            <form id="watch-form" class="form-block">
+              <label for="watch-paths">Paths (optional)</label>
+              <textarea id="watch-paths" placeholder="Leave blank for default roots"></textarea>
+              <div class="form-actions">
+                <button type="submit" class="secondary">Start watcher</button>
+                <span class="status-message" id="watch-status"></span>
+              </div>
+            </form>
+          </div>
+
+          <div>
+            <h3>Import ChatGPT export</h3>
+            <form id="import-form" class="form-block">
+              <label for="import-export">Export ZIP directory</label>
+              <input type="text" id="import-export" placeholder="/path/to/chatgpt-export" />
+              <label for="import-out">Output directory</label>
+              <input type="text" id="import-out" placeholder="./docs/chatgpt-export-md" />
+              <div class="form-actions">
+                <button type="submit" class="secondary">Import &amp; reindex</button>
+                <span class="status-message" id="import-status"></span>
+              </div>
+            </form>
+          </div>
+
+          <div>
+            <h3>Activity stream</h3>
+            <div class="log-stream" id="log-stream"></div>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        Local MCP bridge · Optimised for Vercel deployments · Secure SSE endpoint for ChatGPT integration.
+      </footer>
+    </div>
+
+    <script type="module" src="app.js"></script>
   </body>
 </html>
