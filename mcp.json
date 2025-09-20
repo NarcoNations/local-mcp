@@ -3,7 +3,7 @@
   "description": "Local NarcoNations research indexer with hybrid search and citations.",
   "transport": {
     "type": "sse",
-    "url": "https://localhost:3030/mcp/sse"
+    "url": "https://div-aging-farm-revenue.trycloudflare.com/sse"
   },
   "metadata": {
     "stdio": {

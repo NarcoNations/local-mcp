@@ -100,7 +100,14 @@ async function main() {
     cors({
       origin: process.env.MCP_ALLOW_ORIGINS ? parseList(process.env.MCP_ALLOW_ORIGINS) : true,
       exposedHeaders: ["Mcp-Session-Id"],
-      allowedHeaders: ["Content-Type", "mcp-session-id"],
+      allowedHeaders: (req, callback) => {
+        const requestHeaders = req.header("Access-Control-Request-Headers");
+        if (requestHeaders) {
+          callback(null, requestHeaders.split(",").map((header) => header.trim()).filter(Boolean));
+          return;
+        }
+        callback(null, ["Content-Type", "mcp-session-id"]);
+      },
     })
   );
   app.use(express.json({ limit: "6mb" }));
@@ -109,7 +116,7 @@ async function main() {
   const allowedHosts = parseList(process.env.MCP_ALLOWED_HOSTS);
   const allowedOrigins = parseList(process.env.MCP_ALLOWED_ORIGINS);
 
-  app.get("/mcp/sse", async (req, res) => {
+  async function startSseSession(req: Request, res: Response, messagePath: string) {
     let transport: SSEServerTransport | null = null;
     try {
       const sessionServer = new McpServer(SERVER_INFO, {
@@ -123,7 +130,7 @@ async function main() {
       });
       registerMcpTools(sessionServer, toolkit);
 
-      transport = new SSEServerTransport("/mcp/messages", res, {
+      transport = new SSEServerTransport(messagePath, res, {
         enableDnsRebindingProtection: dnsProtectionEnabled,
         allowedHosts,
         allowedOrigins,
@@ -143,7 +150,7 @@ async function main() {
       };
 
       await sessionServer.connect(transport);
-      pushLog("info", "sse-session-started", { sessionId: transport.sessionId, remote: req.ip ?? undefined });
+      pushLog("info", "sse-session-started", { sessionId: transport.sessionId, remote: req.ip ?? undefined, messagePath });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       logger.error("sse-connection-failed", { err: message });
@@ -155,9 +162,9 @@ async function main() {
         res.status(500).json({ ok: false, error: message });
       }
     }
-  });
+  }
 
-  app.post("/mcp/messages", async (req, res) => {
+  async function handleMessagesPost(req: Request, res: Response) {
     const sessionId = getSessionId(req);
     if (!sessionId) {
       res.status(400).json({ ok: false, error: "sessionId required" });
@@ -178,9 +185,9 @@ async function main() {
         res.status(500).json({ ok: false, error: message });
       }
     }
-  });
+  }
 
-  app.delete("/mcp/messages", async (req, res) => {
+  async function handleMessagesDelete(req: Request, res: Response) {
     const sessionId = getSessionId(req);
     if (!sessionId) {
       res.status(400).json({ ok: false, error: "sessionId required" });
@@ -196,7 +203,20 @@ async function main() {
     await session.server.close().catch(() => {});
     pushLog("info", "sse-session-closed", { sessionId });
     res.status(204).end();
-  });
+  }
+
+  const sseRoutes = [
+    { ssePath: "/mcp/sse", messagePath: "/mcp/messages" },
+    { ssePath: "/sse", messagePath: "/messages" },
+  ] as const;
+
+  for (const route of sseRoutes) {
+    app.get(route.ssePath, (req, res) => {
+      void startSseSession(req, res, route.messagePath);
+    });
+    app.post(route.messagePath, handleMessagesPost);
+    app.delete(route.messagePath, handleMessagesDelete);
+  }
 
   async function respond<T>(res: Response, operation: () => Promise<T>, context: { success?: string; error?: string; meta?: Record<string, unknown> }) {
     try {
@@ -318,7 +338,11 @@ async function main() {
   const staticInfo = resolveStaticDir();
   if (staticInfo) {
     app.use(express.static(staticInfo.root, { index: false, fallthrough: true }));
-    app.get("*", (req, res, next) => {
+    app.use((req, res, next) => {
+      if (req.method !== "GET" && req.method !== "HEAD") {
+        next();
+        return;
+      }
       if (req.path.startsWith("/api") || req.path.startsWith("/mcp")) {
         next();
         return;
