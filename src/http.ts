@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import express, { Request, Response } from "express";
-import cors from "cors";
+import cors, { CorsOptions, CorsOptionsDelegate } from "cors";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { loadConfig } from "./config.js";
@@ -32,6 +32,12 @@ const sessions = new Map<string, SessionState>();
 const logSubscribers = new Set<Response>();
 const logs: LogEntry[] = [];
 const MAX_LOGS = 250;
+const DEFAULT_ALLOWED_HEADERS = [
+  "Content-Type",
+  "Mcp-Session-Id",
+  "Mcp-Protocol-Version",
+  "Accept",
+];
 
 function pushLog(level: LogEntry["level"], message: string, details?: Record<string, unknown>) {
   const entry: LogEntry = {
@@ -96,25 +102,56 @@ async function main() {
   });
 
   const app = express();
-  app.use(
-    cors({
-      origin: process.env.MCP_ALLOW_ORIGINS ? parseList(process.env.MCP_ALLOW_ORIGINS) : true,
-      exposedHeaders: ["Mcp-Session-Id"],
-      allowedHeaders: (req, callback) => {
-        const requestHeaders = req.header("Access-Control-Request-Headers");
-        if (requestHeaders) {
-          callback(null, requestHeaders.split(",").map((header) => header.trim()).filter(Boolean));
-          return;
-        }
-        callback(null, ["Content-Type", "mcp-session-id"]);
-      },
-    })
-  );
-  app.use(express.json({ limit: "6mb" }));
-
+  const manifestPath = path.resolve(process.cwd(), "mcp.json");
   const dnsProtectionEnabled = process.env.MCP_ENABLE_DNS_REBINDING === "1";
   const allowedHosts = parseList(process.env.MCP_ALLOWED_HOSTS);
   const allowedOrigins = parseList(process.env.MCP_ALLOWED_ORIGINS);
+  const corsOrigin: CorsOptions["origin"] = allowedOrigins && allowedOrigins.length ? allowedOrigins : true;
+
+  const corsDelegate: CorsOptionsDelegate<Request> = (req, callback) => {
+    const requestHeaders = req.header("Access-Control-Request-Headers");
+    const requested = requestHeaders
+      ? requestHeaders
+          .split(",")
+          .map((header) => header.trim())
+          .filter(Boolean)
+      : [];
+
+    const headers = Array.from(new Set([...DEFAULT_ALLOWED_HEADERS, ...requested]));
+
+    const options: CorsOptions = {
+      origin: corsOrigin,
+      credentials: true,
+      exposedHeaders: ["Mcp-Session-Id"],
+      methods: ["GET", "POST", "DELETE", "OPTIONS"],
+      allowedHeaders: headers,
+      optionsSuccessStatus: 204,
+    };
+
+    callback(null, options);
+  };
+
+  const corsMiddleware = cors(corsDelegate);
+  app.use(corsMiddleware);
+  app.options("*", corsMiddleware);
+  app.use(express.json({ limit: "6mb" }));
+
+  app.use((req, _res, next) => {
+    if (
+      req.path.startsWith("/mcp") ||
+      req.path === "/sse" ||
+      req.path === "/messages" ||
+      req.path.startsWith("/.well-known")
+    ) {
+      pushLog("debug", "http-request", {
+        method: req.method,
+        path: req.path,
+        origin: req.header("origin") ?? undefined,
+        accessControlRequestHeaders: req.header("access-control-request-headers") ?? undefined,
+      });
+    }
+    next();
+  });
 
   async function startSseSession(req: Request, res: Response, messagePath: string) {
     let transport: SSEServerTransport | null = null;
@@ -324,8 +361,7 @@ async function main() {
     res.json({ ok: true, sessions: sessions.size });
   });
 
-  app.get("/mcp.json", (_req, res) => {
-    const manifestPath = path.resolve(process.cwd(), "mcp.json");
+  const manifestResponder = (_req: Request, res: Response) => {
     res.type("application/json");
     res.sendFile(manifestPath, (error) => {
       if (error) {
@@ -333,7 +369,11 @@ async function main() {
         res.status(err.statusCode ?? 500).json({ ok: false, error: err.message });
       }
     });
-  });
+  };
+
+  app.get("/mcp.json", manifestResponder);
+  app.get("/.well-known/ai-plugin.json", manifestResponder);
+  app.get("/.well-known/mcp.json", manifestResponder);
 
   const staticInfo = resolveStaticDir();
   if (staticInfo) {
