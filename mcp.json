@@ -2,10 +2,15 @@
   "name": "mcp-nn",
   "description": "Local NarcoNations research indexer with hybrid search and citations.",
   "transport": {
-    "type": "stdio",
-    "command": ["npm", "run", "dev:mcp"],
-    "env": {
-      "NODE_ENV": "production"
+    "type": "sse",
+    "url": "https://localhost:3030/mcp/sse"
+  },
+  "metadata": {
+    "stdio": {
+      "command": ["npm", "run", "dev:mcp"],
+      "env": {
+        "NODE_ENV": "production"
+      }
     }
   },
   "capabilities": {
