@@ -1,4 +1,5 @@
-node_modules
-dist
-.mcp-nn
+node_modules/
+dist/
+.mcp-nn/
 .DS_Store
+npm-debug.log*
