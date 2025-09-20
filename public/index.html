@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Local Research MCP — NarcoNations</title>
+    <style>
+      :root {
+        color-scheme: dark light;
+        --bg: radial-gradient(circle at top left, #131f2b, #050608 55%);
+        --fg: #f1f5f9;
+        --accent: #38bdf8;
+        --accent-strong: #0ea5e9;
+        --card-bg: rgba(15, 23, 42, 0.75);
+        --border: rgba(148, 163, 184, 0.3);
+        --shadow: 0 30px 80px rgba(15, 23, 42, 0.65);
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--fg);
+        display: flex;
+        flex-direction: column;
+      }
+
+      header {
+        padding: clamp(1.5rem, 3vw, 3rem) clamp(1.5rem, 5vw, 5rem) 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      header h1 {
+        font-size: clamp(1.5rem, 3vw, 2.5rem);
+        margin: 0;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      header nav {
+        display: flex;
+        gap: clamp(0.75rem, 2vw, 1.75rem);
+        flex-wrap: wrap;
+      }
+
+      header a {
+        color: var(--fg);
+        text-decoration: none;
+        font-weight: 600;
+        transition: opacity 0.2s ease;
+        opacity: 0.85;
+      }
+
+      header a:hover {
+        opacity: 1;
+      }
+
+      main {
+        flex: 1;
+        display: grid;
+        place-items: center;
+        padding: clamp(1.5rem, 5vw, 5rem);
+      }
+
+      .hero {
+        width: min(1100px, 100%);
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: clamp(1.2rem, 4vw, 2.5rem);
+        padding: clamp(2rem, 4vw, 4rem);
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+      }
+
+      .hero::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), transparent 50%);
+      }
+
+      .hero-content {
+        display: grid;
+        gap: clamp(2rem, 4vw, 4rem);
+      }
+
+      .hero h2 {
+        font-size: clamp(2.25rem, 5vw, 4rem);
+        font-weight: 700;
+        margin: 0;
+        line-height: 1.05;
+      }
+
+      .hero p.lede {
+        margin: 0;
+        font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+        max-width: 54ch;
+        opacity: 0.85;
+        line-height: 1.6;
+      }
+
+      .cta-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+      }
+
+      .cta-group a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.95rem 1.6rem;
+        border-radius: 999px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        background: var(--accent);
+        color: #020617;
+        box-shadow: 0 15px 40px rgba(14, 165, 233, 0.45);
+      }
+
+      .cta-group a.secondary {
+        background: transparent;
+        color: var(--fg);
+        border: 1px solid var(--border);
+        box-shadow: none;
+      }
+
+      .cta-group a:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 18px 50px rgba(14, 165, 233, 0.55);
+      }
+
+      .cta-group a.secondary:hover {
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.4);
+      }
+
+      .grid {
+        display: grid;
+        gap: clamp(1.5rem, 4vw, 3rem);
+      }
+
+      .grid.features {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+
+      .card {
+        background: rgba(15, 23, 42, 0.65);
+        border-radius: 1.25rem;
+        padding: 1.75rem;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        backdrop-filter: blur(16px);
+      }
+
+      .card h3 {
+        margin: 0 0 0.75rem;
+        font-size: 1.1rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .card p {
+        margin: 0;
+        font-size: 0.98rem;
+        line-height: 1.6;
+        opacity: 0.85;
+      }
+
+      footer {
+        padding: clamp(1.5rem, 3vw, 3rem) clamp(1.5rem, 5vw, 5rem);
+        border-top: 1px solid rgba(148, 163, 184, 0.2);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: space-between;
+        font-size: 0.9rem;
+        opacity: 0.85;
+      }
+
+      @media (max-width: 720px) {
+        header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        header nav {
+          width: 100%;
+          justify-content: flex-start;
+        }
+
+        .cta-group {
+          width: 100%;
+        }
+
+        .cta-group a {
+          flex: 1 1 auto;
+          justify-content: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>NarcoNations • MCP</h1>
+      <nav>
+        <a href="#workflow">Workflow</a>
+        <a href="#features">Features</a>
+        <a href="https://github.com/NarcoNations" target="_blank" rel="noreferrer">GitHub</a>
+      </nav>
+    </header>
+    <main>
+      <article class="hero">
+        <div class="hero-content">
+          <div>
+            <h2>All of NarcoNations. Zero cloud. Fully grounded.</h2>
+            <p class="lede">
+              mcp-nn is the local research engine that keeps every PDF, dossier, export, and transcript ready for instant recall.
+              Embed and search completely offline, enforce precise citations, and let any MCP-enabled GPT retrieve the same facts
+              on demand.
+            </p>
+          </div>
+          <div class="cta-group">
+            <a href="https://github.com/NarcoNations/local-mcp" target="_blank" rel="noreferrer">View repository</a>
+            <a class="secondary" href="https://modelcontextprotocol.io" target="_blank" rel="noreferrer">MCP docs</a>
+          </div>
+          <section id="features" class="grid features">
+            <div class="card">
+              <h3>Hybrid Retrieval</h3>
+              <p>Blend BM25 keyword hits with MiniLM embeddings. Dense + sparse vectors stay local for deterministic scoring.</p>
+            </div>
+            <div class="card">
+              <h3>Universal Loaders</h3>
+              <p>Parse PDF (w/ OCR), Markdown, DOCX, TXT, Pages, and ChatGPT exports. Citations carry file, page, and offsets.</p>
+            </div>
+            <div class="card">
+              <h3>Resilient Index</h3>
+              <p>
+                SQLite-VSS when present, pure TypeScript fallback otherwise. Every chunk persists with UUIDv5 IDs and cached
+                embeddings.
+              </p>
+            </div>
+            <div class="card">
+              <h3>Agent Ready</h3>
+              <p>
+                search_local, get_doc, reindex, watch, stats, and import_chatgpt_export ship as MCP tools with strict Zod schemas.
+              </p>
+            </div>
+          </section>
+          <section id="workflow" class="grid">
+            <div class="card">
+              <h3>Quickstart</h3>
+              <p>
+                npm install → npm run models:download → npm run index -- ./docs → npm run dev. All computation runs on-device and
+                stays offline.
+              </p>
+            </div>
+            <div class="card">
+              <h3>ChatGPT Imports</h3>
+              <p>
+                Convert conversations.json exports into Markdown with npm run chatgpt:to-md, then index alongside your dossiers.
+              </p>
+            </div>
+          </section>
+        </div>
+      </article>
+    </main>
+    <footer>
+      <span>© NarcoNations.org</span>
+      <span>Local Research MCP v1.1 • Offline by default</span>
+    </footer>
+  </body>
+</html>
