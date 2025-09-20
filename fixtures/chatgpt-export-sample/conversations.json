@@ -1,0 +1,24 @@
+{
+  "conversations": [
+    {
+      "id": "sample-convo",
+      "title": "Antwerp insights",
+      "create_time": 1700000000,
+      "model_slug": "gpt-4o-mini",
+      "messages": [
+        {
+          "id": "m1",
+          "author": { "role": "user" },
+          "content": { "parts": ["Share Antwerp cocaine port context."] },
+          "create_time": 1700000000
+        },
+        {
+          "id": "m2",
+          "author": { "role": "assistant" },
+          "content": { "parts": ["Assistant response about Antwerp port smuggling tactics."] },
+          "create_time": 1700000100
+        }
+      ]
+    }
+  ]
+}

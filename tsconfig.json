@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ESNext",
+    "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
     "esModuleInterop": true,
@@ -10,6 +10,8 @@
     "strict": true,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts"],
-  "ts-node": { "esm": true }
+  "include": ["src/**/*.ts", "src/types/**/*.d.ts", "tests/**/*.ts", "scripts/**/*.ts"],
+  "ts-node": {
+    "esm": true
+  }
 }
