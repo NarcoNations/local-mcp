@@ -1,31 +1,32 @@
 {
   "name": "mcp-nn",
-  "version": "1.0.0",
-  "main": "index.js",
+  "version": "1.1.0",
+  "description": "Offline MCP server for NarcoNations.org research corpus",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
-    "test": "vitest run",
     "dev": "tsx src/server.ts",
     "start": "node --enable-source-maps dist/server.js",
     "build": "tsc -p tsconfig.json",
     "index": "ts-node src/cli-index.ts",
     "watch": "ts-node src/cli-watch.ts",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "models:download": "node scripts/prefetch-model.mjs",
     "clean": "rimraf .mcp-nn dist",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "type": "module",
-  "engines": {
-    "node": ">=20.0.0"
+    "chatgpt:to-md": "ts-node scripts/chatgpt-export-to-md.ts",
+    "chatgpt:index": "ts-node scripts/chatgpt-export-to-md.ts ./fixtures/chatgpt-export-sample && ts-node src/cli-index.ts ./docs/chatgpt-export-md",
+    "chatgpt:quickstart": "npm run chatgpt:to-md -- ~/Downloads/chatgpt-export && npm run index -- ./docs/chatgpt-export-md"
   },
   "ts-node": {
-    "esm": "true",
-    "transpileOnly": "true"
+    "esm": true,
+    "transpileOnly": true
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.18.1",
     "@xenova/transformers": "^2.17.2",
     "adm-zip": "^0.5.16",
     "chokidar": "^4.0.3",

@@ -1,0 +1,22 @@
+[
+  {
+    "id": "conv-1",
+    "title": "Sample Chat",
+    "create_time": 1710000000,
+    "model_slug": "gpt-4",
+    "messages": [
+      {
+        "id": "m1",
+        "author": { "role": "user" },
+        "content": { "parts": ["Hello"] },
+        "create_time": 1710000000
+      },
+      {
+        "id": "m2",
+        "author": { "role": "assistant" },
+        "content": { "parts": ["Hi there"] },
+        "create_time": 1710000001
+      }
+    ]
+  }
+]
