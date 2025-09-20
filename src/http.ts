@@ -95,26 +95,38 @@ async function main() {
     },
   });
 
-  const app = express();
-  app.use(
-    cors({
-      origin: process.env.MCP_ALLOW_ORIGINS ? parseList(process.env.MCP_ALLOW_ORIGINS) : true,
-      exposedHeaders: ["Mcp-Session-Id"],
-      allowedHeaders: (req, callback) => {
-        const requestHeaders = req.header("Access-Control-Request-Headers");
-        if (requestHeaders) {
-          callback(null, requestHeaders.split(",").map((header) => header.trim()).filter(Boolean));
-          return;
-        }
-        callback(null, ["Content-Type", "mcp-session-id"]);
-      },
-    })
-  );
-  app.use(express.json({ limit: "6mb" }));
-
   const dnsProtectionEnabled = process.env.MCP_ENABLE_DNS_REBINDING === "1";
   const allowedHosts = parseList(process.env.MCP_ALLOWED_HOSTS);
-  const allowedOrigins = parseList(process.env.MCP_ALLOWED_ORIGINS);
+  const allowedOrigins = parseList(process.env.MCP_ALLOWED_ORIGINS ?? process.env.MCP_ALLOW_ORIGINS);
+  const defaultAllowedHeaders = [
+    "Content-Type",
+    "Mcp-Session-Id",
+    "mcp-session-id",
+    "Mcp-Protocol-Version",
+    "mcp-protocol-version",
+  ];
+  const corsMethods = ["GET", "POST", "DELETE", "OPTIONS"];
+  const corsMiddleware = cors((req, callback) => {
+    const requestHeaders = req.headers["access-control-request-headers"];
+    const requestHeaderList = Array.isArray(requestHeaders)
+      ? requestHeaders.join(",")
+      : requestHeaders;
+    const headers = requestHeaderList
+      ?.split(",")
+      .map((header: string) => header.trim())
+      .filter(Boolean);
+    callback(null, {
+      origin: allowedOrigins ?? true,
+      methods: corsMethods,
+      exposedHeaders: ["Mcp-Session-Id"],
+      allowedHeaders: headers && headers.length ? headers : defaultAllowedHeaders,
+    });
+  });
+
+  const app = express();
+  app.use(corsMiddleware);
+  app.options("*", corsMiddleware);
+  app.use(express.json({ limit: "6mb" }));
 
   async function startSseSession(req: Request, res: Response, messagePath: string) {
     let transport: SSEServerTransport | null = null;
