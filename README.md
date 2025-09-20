@@ -13,10 +13,11 @@ Offline Model Context Protocol (MCP) server for NarcoNations.org research. Index
 npm install
 npm run models:download   # optional: prefetch MiniLM weights for offline mode
 npm run index -- ./docs ./public/dossiers
-npm run dev               # start MCP server over stdio
+npm run dev               # start stdio MCP + HTTPS/SSE bridge + web control center
 ```
 
-In an MCP-enabled client (Custom GPT, Claude Desktop, etc.) declare the transport as stdio and point to `npm run dev`.
+Open <https://localhost:3040> for the responsive control center, or run `npm run dev:mcp` if you only need the stdio server.
+For SSE clients (ChatGPT MCP beta, Claude Desktop, etc.) point the manifest at `https://localhost:3040/mcp/stream`.
 
 ### Example tool calls
 
@@ -37,6 +38,54 @@ In an MCP-enabled client (Custom GPT, Claude Desktop, etc.) declare the transpor
   "input": { "path": "./docs/ports/antwerp.pdf", "page": 12 }
 }
 ```
+
+## Web control center
+
+- `npm run dev` serves the dashboard at <https://localhost:3040> with a development TLS certificate (`dev-key.pem`/`dev-cert.pem`).
+- Fully responsive layout: mobile-first controls collapse into a single column, while large displays gain a cinematic split view with live logs.
+- Features
+  - Hybrid search runner with filter chips and modal document viewer (`get_doc` under the hood).
+  - Reindex trigger (`reindex`) and chokidar-based watch starter (`watch`).
+  - Corpus stats (`stats`) rendered as live counts and per-type breakdown.
+  - Live JSON log feed streamed over Server-Sent Events.
+- All UI actions call the same tool implementations exposed to MCP clients, so behaviour matches scripted usage.
+
+REST endpoints (consumed by the UI) live under `/api/*`:
+
+| Endpoint | Method | Description |
+| -------- | ------ | ----------- |
+| `/api/search` | POST | Proxy to `search_local` |
+| `/api/get-doc` | POST | Proxy to `get_doc` |
+| `/api/reindex` | POST | Proxy to `reindex` |
+| `/api/watch` | POST | Proxy to `watch` |
+| `/api/stats` | GET | Returns manifest snapshot |
+| `/api/logs` | GET | Returns recent log buffer |
+
+## HTTPS + SSE bridge for ChatGPT / Custom GPTs
+
+The new bridge exposes an MCP-compliant SSE transport and static manifest suitable for ChatGPT's MCP beta:
+
+1. Launch the bridge with TLS (self-signed dev certs are bundled). Override with `TLS_CERT_PATH`/`TLS_KEY_PATH` if you have trusted certificates.
+2. If you prefer to terminate TLS elsewhere, set `HTTP_ONLY=1` and place the service behind an HTTPS tunnel (e.g. `cloudflared`, `ngrok`).
+3. Ensure the manifest is reachable: `https://<your-host>/mcp.json` (served automatically by the bridge).
+4. Update `mcp.json`'s `transport.url` to the public HTTPS origin (defaults to `https://localhost:3040/mcp/stream`). Remove the placeholder `x-mcp-token` header or replace it with your own secret.
+5. For ChatGPT, host the manifest somewhere permanent (GitHub Pages, S3) or use the tunnel URL directly, then add the tool via the MCP beta UI.
+
+Tunnelling example with Cloudflare (serves HTTPS for free):
+
+```bash
+cloudflared tunnel --url https://localhost:3040
+```
+
+### Bridge environment variables
+
+- `PORT` / `HOST` – bind address for the HTTPS bridge (default `3040` / `0.0.0.0`).
+- `TLS_CERT_PATH` / `TLS_KEY_PATH` – PEM paths for HTTPS. Defaults to `dev-cert.pem` and `dev-key.pem` if present.
+- `HTTP_ONLY=1` – disable TLS and serve plain HTTP (use with an external reverse proxy).
+- `CORS_ORIGIN` – override CORS headers (defaults to `*`).
+- `API_PREFIX` – customise REST prefix (defaults to `/api`).
+- `MCP_STREAM_PATH` / `MCP_MESSAGE_PATH` – adjust SSE endpoints (`/mcp/stream` + `/mcp/messages`).
+- `LOG_STREAM_PATH` – customise the live log SSE endpoint (`/logs/stream`).
 
 ## ChatGPT → ZIP → Markdown → Index
 

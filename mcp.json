@@ -1,11 +1,11 @@
 {
   "name": "mcp-nn",
-  "description": "Local NarcoNations research indexer with hybrid search and citations.",
+  "description": "Local NarcoNations research indexer with hybrid search, citations, and live monitoring.",
   "transport": {
-    "type": "stdio",
-    "command": ["npm", "run", "dev:mcp"],
-    "env": {
-      "NODE_ENV": "production"
+    "type": "sse",
+    "url": "https://localhost:3040/mcp/stream",
+    "headers": {
+      "x-mcp-token": "set-your-token-if-needed"
     }
   },
   "capabilities": {
