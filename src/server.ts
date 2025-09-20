@@ -1,3 +1,4 @@
+import { maybeParseSamplePdf } from "./lib/maybe-parse-sample-pdf.js";
 import "source-map-support/register";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -185,3 +186,6 @@ main().catch((err) => {
   logger.error("startup-failed", { err: String(err) });
   process.exit(1);
 });
+
+// Optional demo: try parsing SAMPLE_PDF if present (non-blocking)
+if (process.env.DISABLE_SAMPLE_PDF!=="1") { void maybeParseSamplePdf(console); }

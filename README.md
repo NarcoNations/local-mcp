@@ -112,7 +112,7 @@ Environment overrides:
 
 ## File type coverage
 
-- **PDF** via `pdf-parse`. Low-density pages trigger an OCR warning (Tesseract integration is stubbed for CPU-only builds).
+- **PDF** via `pdf-parse`. Low-density pages automatically render the sheet to an in-memory canvas and run offline `tesseract.js` OCR (requires the optional `canvas` native dependency). If OCR cannot run, the file is still indexed with `partial:true` so you can address it later.
 - **Markdown** via `gray-matter`, preserving front-matter tags.
 - **TXT** raw UTF-8.
 - **Word (.docx)** via `mammoth`.
@@ -151,7 +151,7 @@ Chunks use deterministic UUIDv5 IDs (path, page, offset) for stable reindexing.
 npm test
 ```
 
-Vitest covers chunking, indexers, store fallback behaviour, and ChatGPT conversion smoke tests.
+Vitest covers chunking, hybrid storage, PDF OCR fallback (mocked), and ChatGPT conversion smoke tests.
 
 ## Vercel deployment
 

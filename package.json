@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "vitest run",
-    "dev": "tsx src/server.ts",
+    "dev": "concurrently -n mcp,http -c blue,green \"tsx src/server.ts\" \"tsx src/http.ts\"",
     "start": "node --enable-source-maps dist/server.js",
     "build": "tsc -p tsconfig.json && node scripts/copy-static.mjs",
     "index": "ts-node src/cli-index.ts",
@@ -14,7 +14,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "chatgpt:to-md": "ts-node scripts/chatgpt-export-to-md.ts",
     "chatgpt:index": "ts-node scripts/chatgpt-export-to-md.ts ./fixtures/chatgpt-export-sample && ts-node src/cli-index.ts ./docs/chatgpt-export-md",
-    "chatgpt:quickstart": "npm run chatgpt:to-md -- ~/Downloads/chatgpt-export && npm run index -- ./docs/chatgpt-export-md"
+    "chatgpt:quickstart": "npm run chatgpt:to-md -- ~/Downloads/chatgpt-export && npm run index -- ./docs/chatgpt-export-md",
+    "dev:mcp": "tsx src/server.ts",
+    "dev:http": "tsx src/http.ts"
   },
   "keywords": [],
   "author": "",
@@ -29,9 +31,11 @@
     "transpileOnly": "true"
   },
   "dependencies": {
+    "@huggingface/jinja": "^0.5.1",
     "@modelcontextprotocol/sdk": "^1.18.1",
     "@xenova/transformers": "^2.17.2",
     "adm-zip": "^0.5.16",
+    "canvas": "^3.2.0",
     "chokidar": "^4.0.3",
     "fast-glob": "^3.3.3",
     "fast-xml-parser": "^5.2.5",
@@ -49,6 +53,7 @@
     "@types/flexsearch": "^0.7.6",
     "@types/node": "^24.5.2",
     "@types/uuid": "^10.0.0",
+    "concurrently": "^9.2.1",
     "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.5",
