@@ -5,7 +5,7 @@
   "transport": {
     "type": "stdio",
     "command": "node",
-    "args": ["./dist/server.js"]
+    "args": ["./dist/src/server.js"]
   },
   "tools": [
     "search_local",

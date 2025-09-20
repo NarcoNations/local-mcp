@@ -6,7 +6,7 @@
   "description": "Offline MCP server for NarcoNations.org local research search.",
   "scripts": {
     "dev": "ts-node src/server.ts",
-    "start": "node --enable-source-maps dist/server.js",
+    "start": "node --enable-source-maps dist/src/server.js",
     "build": "tsc -p tsconfig.json",
     "index": "ts-node src/cli-index.ts",
     "watch": "ts-node src/cli-watch.ts",
@@ -44,6 +44,7 @@
     "@types/adm-zip": "^0.5.5",
     "@types/flexsearch": "^0.7.3",
     "@types/node": "^20.12.12",
+    "@types/source-map-support": "^0.5.10",
     "@types/uuid": "^9.0.7",
     "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",

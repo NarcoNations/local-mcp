@@ -1,17 +1,18 @@
-import "source-map-support/register";
-import { Server } from "@modelcontextprotocol/sdk/dist/server/index";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/dist/server/stdio";
+import sourceMapSupport from "source-map-support";
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
   type CallToolRequest,
-} from "@modelcontextprotocol/sdk/dist/types";
+} from "@modelcontextprotocol/sdk/types.js";
 import { loadConfig } from "./config.js";
 import { Store } from "./store/store.js";
 import { createTools } from "./tools/index.js";
 import { error } from "./utils/logger.js";
 
 async function main() {
+  sourceMapSupport.install();
   const config = await loadConfig();
   const store = await Store.init(config);
   const server = new Server({ name: "mcp-nn", version: "1.1.0" }, {

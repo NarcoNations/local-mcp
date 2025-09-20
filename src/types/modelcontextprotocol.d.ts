@@ -1,4 +1,4 @@
-declare module "@modelcontextprotocol/sdk/dist/server/index" {
+declare module "@modelcontextprotocol/sdk/server/index.js" {
   export class Server<TRequest = any, TNotification = any, TResult = any> {
     constructor(info: { name: string; version: string }, options: any);
     connect(transport: any): Promise<void>;
@@ -7,13 +7,13 @@ declare module "@modelcontextprotocol/sdk/dist/server/index" {
   }
 }
 
-declare module "@modelcontextprotocol/sdk/dist/server/stdio" {
+declare module "@modelcontextprotocol/sdk/server/stdio.js" {
   export class StdioServerTransport {
     constructor();
   }
 }
 
-declare module "@modelcontextprotocol/sdk/dist/types" {
+declare module "@modelcontextprotocol/sdk/types.js" {
   export const CallToolRequestSchema: any;
   export const ListToolsRequestSchema: any;
   export type CallToolRequest = any;
