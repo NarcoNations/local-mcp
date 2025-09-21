@@ -4,6 +4,10 @@ export function hashString(input: string): string {
   return crypto.createHash("sha1").update(input).digest("hex");
 }
 
+export function sha256(input: string | Buffer): string {
+  return crypto.createHash("sha256").update(input).digest("hex");
+}
+
 export function uuidV5FromComponents(namespace: string, components: string[]): string {
   const hash = crypto.createHash("sha1");
   hash.update(namespace);

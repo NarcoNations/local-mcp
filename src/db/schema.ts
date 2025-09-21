@@ -12,7 +12,6 @@ import {
   index,
   customType,
 } from "drizzle-orm/pg-core";
-import { vector } from "drizzle-orm/pg-core";
 import { InferModel } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 
@@ -23,6 +22,12 @@ export const sourceGradeEnum = pgEnum("source_grade", ["A", "B", "C"]);
 const tsvector = customType<{ data: string }>({
   dataType() {
     return "tsvector";
+  },
+});
+
+const vector = customType<{ data: number[] }>({
+  dataType() {
+    return "vector(1536)";
   },
 });
 
@@ -80,7 +85,7 @@ export const chunks = pgTable(
     heading: text("heading"),
     text: text("text").notNull(),
     tokenCount: integer("token_count").notNull(),
-    embedding: vector("embedding", { dimensions: 1536 }).notNull(),
+    embedding: vector("embedding").notNull(),
     tsv: tsvector("tsv").notNull(),
     page: integer("page"),
     offsetStart: integer("offset_start"),
