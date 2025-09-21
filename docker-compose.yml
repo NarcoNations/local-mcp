@@ -1,0 +1,33 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: mcp_memory
+      POSTGRES_USER: mcp
+      POSTGRES_PASSWORD: change_me
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+  n8n:
+    image: n8nio/n8n:1.69
+    environment:
+      - GENERIC_TIMEZONE=UTC
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n-data:/home/node/.n8n
+  mcp:
+    build: .
+    environment:
+      DB_URL: postgres://mcp:change_me@postgres:5432/mcp_memory
+      API_KEY: change_me
+      NODE_ENV: production
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./n8n:/opt/mcp-memory/n8n
+volumes:
+  postgres-data:
+  n8n-data:

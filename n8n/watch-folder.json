@@ -1,0 +1,80 @@
+{
+  "name": "Watch Folder ➜ Ingest",
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Cron",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [260, 300],
+      "parameters": {
+        "triggerTimes": [
+          {
+            "mode": "everyMinute",
+            "unit": "minutes",
+            "value": 5
+          }
+        ]
+      }
+    },
+    {
+      "id": "2",
+      "name": "List Files",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 2,
+      "position": [520, 300],
+      "parameters": {
+        "operation": "list",
+        "filter": {
+          "folderId": "WATCH_FOLDER_ID"
+        }
+      },
+      "notes": "Replace with your preferred filesystem or S3 node."
+    },
+    {
+      "id": "3",
+      "name": "HTTP Ingest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [780, 300],
+      "parameters": {
+        "url": "https://your-host/ingest",
+        "method": "POST",
+        "authentication": "headerAuth",
+        "headerParameters": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{ $json.apiKey }}"
+          }
+        ],
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "{ \"paths\": {{ $json.paths }} }"
+      }
+    }
+  ],
+  "connections": {
+    "Cron": {
+      "main": [
+        [
+          {
+            "node": "List Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Files": {
+      "main": [
+        [
+          {
+            "node": "HTTP Ingest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

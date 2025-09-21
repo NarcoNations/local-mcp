@@ -1,0 +1,2 @@
+id,name,slug,coords,dataset,summary,tags,narrative_slug,last_updated
+node-antwerp,Antwerp Seaport,antwerp-seaport,"[51.2637,4.4125]",narconations_nodes_master,"Primary European entry point for cocaine shipments.","cocaine;ports",antwerp,2025-07-20

@@ -1,0 +1,11 @@
+{
+  "id": "node-antwerp",
+  "name": "Antwerp Seaport",
+  "slug": "antwerp-seaport",
+  "coords": [51.2637, 4.4125],
+  "dataset": "narconations_nodes_master",
+  "summary": "Primary European entry point for cocaine shipments from Latin America.",
+  "tags": ["cocaine", "ports"],
+  "narrative_slug": "antwerp",
+  "last_updated": "2025-07-20"
+}

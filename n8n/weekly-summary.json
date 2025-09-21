@@ -1,0 +1,72 @@
+{
+  "name": "Weekly What I Learned",
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Cron",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [260, 260],
+      "parameters": {
+        "triggerTimes": [
+          {
+            "mode": "everyWeek",
+            "weekday": 0,
+            "hour": 7,
+            "minute": 30
+          }
+        ]
+      }
+    },
+    {
+      "id": "2",
+      "name": "Summary Script",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [520, 260],
+      "parameters": {
+        "command": "cd /opt/mcp-memory && npm run ts-node -- scripts/daily-summary.ts",
+        "options": {
+          "output": "json"
+        }
+      }
+    },
+    {
+      "id": "3",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.smtp",
+      "typeVersion": 2,
+      "position": [780, 260],
+      "parameters": {
+        "fromEmail": "ops@example.com",
+        "toEmail": "you@example.com",
+        "subject": "Weekly MCP Memory Summary",
+        "text": "{{ $json.data }}"
+      }
+    }
+  ],
+  "connections": {
+    "Cron": {
+      "main": [
+        [
+          {
+            "node": "Summary Script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summary Script": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "slug": "supply-chain-map",
+  "title": "European Cocaine Supply Chain",
+  "nodes": [
+    { "id": "origin", "label": "Origin", "route_hint": "#/origin" },
+    { "id": "transit", "label": "Transit", "route_hint": "#/transit" },
+    { "id": "distribution", "label": "Distribution", "route_hint": "#/distribution" }
+  ],
+  "edges": [
+    { "from": "origin", "to": "transit", "weight": 0.7 },
+    { "from": "transit", "to": "distribution", "weight": 0.9 }
+  ],
+  "hero_image": "https://example.com/images/supply-chain.png"
+}

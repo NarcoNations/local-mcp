@@ -1,17 +1,37 @@
-export type LogLevel = "debug" | "info" | "warn" | "error";
+import pino from "pino";
 
-const debugEnabled = process.env.DEBUG === "1" || process.env.NODE_ENV === "development";
+const redactPaths = [
+  "req.headers.authorization",
+  "req.body",
+  "res.body",
+  "payload.text",
+  "payload.snippet",
+  "payload.content",
+  "snippet",
+  "text",
+];
 
-export function log(level: LogLevel, msg: string, meta: Record<string, unknown> = {}): void {
-  if (level === "debug" && !debugEnabled) return;
-  const payload = {
-    level,
-    msg,
-    time: new Date().toISOString(),
-    pid: process.pid,
-    ...meta,
-  };
-  process.stdout.write(`${JSON.stringify(payload)}\n`);
+const destination = pino.destination({ sync: true });
+
+const baseLogger = pino({
+  level: process.env.LOG_LEVEL ?? (process.env.NODE_ENV === "production" ? "info" : "debug"),
+  redact: {
+    paths: redactPaths,
+    remove: true,
+  },
+  formatters: {
+    level(label) {
+      return { level: label };
+    },
+  },
+}, destination);
+
+function log(level: "debug" | "info" | "warn" | "error", msg: string, meta?: Record<string, unknown>) {
+  if (meta) {
+    baseLogger[level](meta, msg);
+  } else {
+    baseLogger[level](msg);
+  }
 }
 
 export const logger = {
@@ -19,4 +39,9 @@ export const logger = {
   info: (msg: string, meta?: Record<string, unknown>) => log("info", msg, meta),
   warn: (msg: string, meta?: Record<string, unknown>) => log("warn", msg, meta),
   error: (msg: string, meta?: Record<string, unknown>) => log("error", msg, meta),
+  child: baseLogger.child.bind(baseLogger),
+  flush: baseLogger.flush?.bind(baseLogger),
+  base: baseLogger,
 };
+
+export type Logger = typeof logger;

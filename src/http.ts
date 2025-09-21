@@ -43,9 +43,11 @@ const searchSchema = z.object({
     .optional(),
 });
 
+const fastifyLogger = logger.child({ service: "http" });
+
 const app = Fastify({
   trustProxy: true,
-  logger: false,
+  logger: fastifyLogger,
 });
 
 await app.register(helmet, { contentSecurityPolicy: false });

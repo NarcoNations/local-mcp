@@ -1,0 +1,12 @@
+[
+  {
+    "question": "Where are the main European cocaine entry points?",
+    "expected_slugs": ["antwerp-seaport", "amsterdam"],
+    "notes": "Should surface Antwerp node and Amsterdam dossier."
+  },
+  {
+    "question": "What actions are recommended for Amsterdam port security?",
+    "expected_snippet": "Expand watch list for flagged containers",
+    "notes": "Ensure key recommendation appears in top snippets."
+  }
+]

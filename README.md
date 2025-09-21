@@ -2,6 +2,17 @@
 
 Offline Model Context Protocol (MCP) server for NarcoNations.org research. Index and search PDF, Markdown, TXT, Word (.docx), and Apple Pages (.pages) with hybrid retrieval (local embeddings + BM25). Returns precise citations (file, page, char ranges, snippet). 100% local. No cloud.
 
+## v0.2a (Memory Server) highlights
+
+- **Postgres + pgvector** backbone with Drizzle migrations (`npx drizzle-kit migrate`).
+- **Fastify HTTP API** (`POST /ingest`, `POST /search`, `GET /health`) secured with bearer auth + rate limiting.
+- **New MCP tools** (`search_corpus`, `add_documents`, `link_items`, `get_document`, `list_sources`).
+- **Unified CLI** `npm run mcp -- <command>` for import/index/search ops.
+- **Observability** via Pino logging (redacted), query latency tracking, and a daily summary script.
+- **Deployment assets**: systemd unit, PM2 config, optional Docker Compose, and n8n workflow examples.
+
+> The legacy docs below describe the earlier filesystem build (v1.x). Use the sections above plus `docs/version4-architecture.md` for v0.2a specifics.
+
 ## Quickstart
 
 ### Requirements

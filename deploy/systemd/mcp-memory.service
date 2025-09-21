@@ -1,0 +1,20 @@
+[Unit]
+Description=MCP Memory Server
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/mcp-memory
+Environment=NODE_ENV=production
+EnvironmentFile=/etc/mcp-memory/env
+ExecStart=/usr/bin/npm start
+Restart=on-failure
+User=mcp
+Group=mcp
+# Avoid writing sensitive content to journals
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=mcp-memory
+
+[Install]
+WantedBy=multi-user.target
