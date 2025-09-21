@@ -1,144 +1,164 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { AppConfig } from "../config.js";
+import { env } from "../config/env.js";
+import { importPaths } from "../services/import-service.js";
+import { indexPendingDocuments } from "../services/index-service.js";
+import { searchCorpus } from "../services/search-service.js";
+import { createLink, getDocumentDetail, listSources } from "../services/document-service.js";
 import { logger } from "../utils/logger.js";
-import {
-  createSearchLocalTool,
-  SearchLocalInputSchema,
-  SearchLocalShape,
-} from "../tools/searchLocal.js";
-import { createGetDocTool, GetDocInputSchema, GetDocShape } from "../tools/getDoc.js";
-import {
-  createReindexTool,
-  ReindexInputSchema,
-  ReindexShape,
-} from "../tools/reindex.js";
-import {
-  createWatchTool,
-  WatchInputSchema,
-  WatchShape,
-} from "../tools/watch.js";
-import { createStatsTool } from "../tools/stats.js";
-import {
-  createImportChatGPTTool,
-  ImportChatGPTSchema,
-  ImportChatGPTShape,
-} from "../tools/importChatGPT.js";
 
-export interface ToolKit {
-  searchLocal: ReturnType<typeof createSearchLocalTool>;
-  getDoc: ReturnType<typeof createGetDocTool>;
-  reindex: ReturnType<typeof createReindexTool>;
-  watch: ReturnType<typeof createWatchTool>;
-  stats: ReturnType<typeof createStatsTool>;
-  importChatGPT: ReturnType<typeof createImportChatGPTTool>;
-}
+const SearchFiltersShape = {
+  author: z.string().optional(),
+  content_type: z.string().optional(),
+  slug: z.string().optional(),
+  tag: z.string().optional(),
+  date_from: z.string().optional(),
+  date_to: z.string().optional(),
+} as const;
 
-export interface ToolKitOptions {
-  server?: McpServer;
-  onWatchEvent?: (event: Record<string, unknown>, extra?: Record<string, unknown>) => void;
-}
+const SearchFiltersSchema = z.object(SearchFiltersShape);
 
-export function createToolKit(config: AppConfig, options?: ToolKitOptions): ToolKit {
-  const searchLocal = createSearchLocalTool(config);
-  const getDoc = createGetDocTool(config);
-  const reindex = createReindexTool(config);
-  const stats = createStatsTool(config);
-  const watch = createWatchTool(config, (event, extra) => {
-    options?.onWatchEvent?.(event, extra);
-    if (!options?.server) return;
-    const sessionId = (extra?.sessionId as string | undefined) ?? undefined;
-    options.server
-      .sendLoggingMessage({ level: "info", data: JSON.stringify(event) }, sessionId)
-      .catch((err) => logger.warn("watch-notify-failed", { err: String(err) }));
-  });
-  const importChatGPT = createImportChatGPTTool(config);
-  return { searchLocal, getDoc, reindex, watch, stats, importChatGPT };
-}
+const SearchCorpusShape = {
+  query: z.string().min(1),
+  top_k: z.number().int().positive().max(32).optional(),
+  filters: SearchFiltersSchema.optional(),
+} as const;
 
-export function registerMcpTools(server: McpServer, toolkit: ToolKit): void {
+const SearchCorpusSchema = z.object(SearchCorpusShape);
+
+const AddDocumentsShape = {
+  paths: z.array(z.string().min(1)).nonempty().optional(),
+} as const;
+
+const AddDocumentsSchema = z.object(AddDocumentsShape);
+
+const LinkItemsShape = {
+  from_id: z.string().min(1),
+  to_id: z.string().min(1),
+  relation: z.enum(["supports", "contradicts", "related"]),
+  note: z.string().optional(),
+} as const;
+
+const LinkItemsSchema = z.object(LinkItemsShape);
+
+const GetDocumentShape = {
+  document_id: z.string().min(1),
+} as const;
+
+const GetDocumentSchema = z.object(GetDocumentShape);
+
+const ListSourcesShape = {
+  kind: z.enum(["chat_export", "file", "url"]).optional(),
+} as const;
+
+const ListSourcesSchema = z.object(ListSourcesShape);
+
+export function registerMcpTools(server: McpServer): void {
   server.registerTool(
-    "search_local",
+    "search_corpus",
     {
-      title: "Hybrid local search",
-      description: "Search PDFs, Markdown, text, Word, and Pages files across configured roots using dense + keyword retrieval.",
-      inputSchema: SearchLocalShape,
-      annotations: { readOnlyHint: true, title: "Search Local" },
+      title: "Search indexed corpus",
+      description: "Hybrid search across imported documents with citation metadata.",
+      inputSchema: SearchCorpusShape,
+      annotations: { readOnlyHint: true, title: "Search Corpus" },
     },
-    async (args: z.infer<typeof SearchLocalInputSchema>) => {
-      const result = await toolkit.searchLocal(args);
+    async (input) => {
+      const args = SearchCorpusSchema.parse(input);
+      const filters = args.filters
+        ? {
+            author: args.filters.author,
+            contentType: args.filters.content_type,
+            slug: args.filters.slug,
+            tag: args.filters.tag,
+            dateFrom: args.filters.date_from ? new Date(args.filters.date_from) : undefined,
+            dateTo: args.filters.date_to ? new Date(args.filters.date_to) : undefined,
+          }
+        : {};
+      const response = await searchCorpus(args.query, args.top_k ?? env.RESULTS_TOPK, filters);
+      const structured = response as unknown as Record<string, unknown>;
       return {
-        structuredContent: result,
+        structuredContent: structured,
         content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify(result, null, 2),
-          },
+          { type: "text" as const, text: JSON.stringify(response, null, 2) },
         ],
       };
     }
   );
 
   server.registerTool(
-    "get_doc",
+    "add_documents",
     {
-      title: "Retrieve document text",
-      description: "Read the full text for a file or a specific PDF/Pages page from the local index.",
-      inputSchema: GetDocShape,
+      title: "Add documents",
+      description: "Import and index documents from local paths.",
+      inputSchema: AddDocumentsShape,
+      annotations: { readOnlyHint: false, title: "Add Documents" },
+    },
+    async (input) => {
+      const args = AddDocumentsSchema.parse(input);
+      if (!args.paths?.length) {
+        throw new Error("paths array is required");
+      }
+      const importSummary = await importPaths(args.paths);
+      const indexSummary = await indexPendingDocuments();
+      const payload = {
+        import: importSummary,
+        index: indexSummary,
+      };
+      logger.info("mcp-add-documents", payload);
+      return {
+        structuredContent: payload,
+        content: [{ type: "text" as const, text: JSON.stringify(payload, null, 2) }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "link_items",
+    {
+      title: "Link chunks",
+      description: "Create a relationship between two chunks in the corpus.",
+      inputSchema: LinkItemsShape,
+      annotations: { readOnlyHint: false, title: "Link Items" },
+    },
+    async (input) => {
+      const args = LinkItemsSchema.parse(input);
+      await createLink({
+        fromId: args.from_id,
+        toId: args.to_id,
+        relation: args.relation,
+        note: args.note,
+      });
+      return {
+        structuredContent: { ok: true } as Record<string, unknown>,
+        content: [{ type: "text" as const, text: "Link created" }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "get_document",
+    {
+      title: "Get document detail",
+      description: "Retrieve document metadata and chunk sections.",
+      inputSchema: GetDocumentShape,
       annotations: { readOnlyHint: true, title: "Get Document" },
     },
-    async (args: z.infer<typeof GetDocInputSchema>) => {
-      const doc = await toolkit.getDoc(args);
-      return {
-        structuredContent: doc,
-        content: [
-          {
-            type: "text" as const,
-            text: doc.text.slice(0, 2000),
-          },
-        ],
-      };
-    }
-  );
-
-  server.registerTool(
-    "reindex",
-    {
-      title: "Reindex paths",
-      description: "Reindex the configured roots or provided paths to refresh the hybrid search corpus.",
-      inputSchema: ReindexShape,
-      annotations: { readOnlyHint: false, title: "Reindex" },
-    },
-    async (args: z.infer<typeof ReindexInputSchema>) => {
-      const stats = await toolkit.reindex(args);
-      return {
-        structuredContent: stats,
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify(stats),
-          },
-        ],
-      };
-    }
-  );
-
-  server.registerTool(
-    "stats",
-    {
-      title: "Corpus stats",
-      description: "Return aggregate metrics about the indexed corpus.",
-      annotations: { readOnlyHint: true, title: "Stats" },
-    },
-    async () => {
-      const stats = await toolkit.stats();
-      const structured = JSON.parse(JSON.stringify(stats)) as Record<string, unknown>;
+    async (input) => {
+      const args = GetDocumentSchema.parse(input);
+      const detail = await getDocumentDetail(args.document_id);
+      if (!detail) {
+        throw new Error(`Document ${args.document_id} not found`);
+      }
+      const structured = {
+        document: detail.document,
+        sections: detail.sections,
+      } as Record<string, unknown>;
       return {
         structuredContent: structured,
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify(stats, null, 2),
+            text: JSON.stringify({ ...detail, sections: detail.sections.slice(0, 1) }, null, 2),
           },
         ],
       };
@@ -146,45 +166,19 @@ export function registerMcpTools(server: McpServer, toolkit: ToolKit): void {
   );
 
   server.registerTool(
-    "watch",
+    "list_sources",
     {
-      title: "Watch paths",
-      description: "Watch configured roots for changes and automatically trigger reindexing.",
-      inputSchema: WatchShape,
-      annotations: { readOnlyHint: false, title: "Watch" },
+      title: "List sources",
+      description: "List imported sources with optional filtering.",
+      inputSchema: ListSourcesShape,
+      annotations: { readOnlyHint: true, title: "List Sources" },
     },
-    async (args: z.infer<typeof WatchInputSchema>, extra) => {
-      const info = await toolkit.watch(args, { sessionId: extra?.sessionId });
+    async (input) => {
+      const args = ListSourcesSchema.parse(input ?? {});
+      const sources = await listSources(args.kind);
       return {
-        structuredContent: info,
-        content: [
-          {
-            type: "text" as const,
-            text: `Watching ${info.watching.length} path(s).`,
-          },
-        ],
-      };
-    }
-  );
-
-  server.registerTool(
-    "import_chatgpt_export",
-    {
-      title: "Import ChatGPT export",
-      description: "Convert a ChatGPT export ZIP into Markdown and reindex the output directory.",
-      inputSchema: ImportChatGPTShape,
-      annotations: { readOnlyHint: false, title: "Import ChatGPT Export" },
-    },
-    async (args: z.infer<typeof ImportChatGPTSchema>) => {
-      const result = await toolkit.importChatGPT(args);
-      return {
-        structuredContent: result,
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
+        structuredContent: { sources } as Record<string, unknown>,
+        content: [{ type: "text" as const, text: JSON.stringify({ sources }, null, 2) }],
       };
     }
   );

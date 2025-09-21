@@ -2,13 +2,15 @@
   "name": "mcp-nn",
   "version": "1.0.0",
   "main": "index.js",
+  "bin": {
+    "mcp": "./dist/cli.js"
+  },
   "scripts": {
     "test": "vitest run",
     "dev": "concurrently -n mcp,http -c blue,green \"tsx src/server.ts\" \"tsx src/http.ts\"",
     "start": "node --enable-source-maps dist/http.js",
     "build": "tsc -p tsconfig.json && node scripts/copy-static.mjs",
-    "index": "ts-node src/cli-index.ts",
-    "watch": "ts-node src/cli-watch.ts",
+    "mcp": "tsx src/cli.ts",
     "models:download": "node scripts/prefetch-model.mjs",
     "clean": "rimraf .mcp-nn dist",
     "typecheck": "tsc -p tsconfig.json --noEmit",
