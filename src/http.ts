@@ -125,11 +125,34 @@ async function main() {
 
   const app = express();
   app.use(corsMiddleware);
-  app.options("*", corsMiddleware);
+  // Express 5 no longer accepts "*" as a catch-all pattern, so use a regex.
+  app.options(/.*/, corsMiddleware);
   app.use(express.json({ limit: "6mb" }));
 
   async function startSseSession(req: Request, res: Response, messagePath: string) {
     let transport: SSEServerTransport | null = null;
+    let heartbeat: NodeJS.Timeout | null = null;
+    const startHeartbeat = () => {
+      if (heartbeat) return;
+      heartbeat = setInterval(() => {
+        try {
+          res.write(": keep-alive\n\n");
+        } catch (error) {
+          clearHeartbeat();
+          logger.warn("sse-heartbeat-write-failed", {
+            sessionId: transport!.sessionId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }, 25000);
+    };
+
+    const clearHeartbeat = () => {
+      if (!heartbeat) return;
+      clearInterval(heartbeat);
+      heartbeat = null;
+    };
+
     try {
       const sessionServer = new McpServer(SERVER_INFO, {
         capabilities: { tools: {}, logging: {} },
@@ -152,7 +175,7 @@ async function main() {
       transport.onclose = () => {
         sessions.delete(transport!.sessionId);
         pushLog("info", "sse-session-closed", { sessionId: transport!.sessionId });
-        sessionServer.close().catch(() => {});
+        clearHeartbeat();
       };
       transport.onerror = (error) => {
         pushLog("error", "sse-transport-error", {
@@ -162,6 +185,8 @@ async function main() {
       };
 
       await sessionServer.connect(transport);
+      res.write(": ready\n\n");
+      startHeartbeat();
       pushLog("info", "sse-session-started", { sessionId: transport.sessionId, remote: req.ip ?? undefined, messagePath });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -170,9 +195,16 @@ async function main() {
       if (transport) {
         sessions.delete(transport.sessionId);
       }
+      clearHeartbeat();
       if (!res.headersSent) {
         res.status(500).json({ ok: false, error: message });
       }
+    }
+    if (req.aborted) {
+      if (transport) {
+        sessions.delete(transport.sessionId);
+      }
+      clearHeartbeat();
     }
   }
 
@@ -211,7 +243,6 @@ async function main() {
       return;
     }
     sessions.delete(sessionId);
-    await session.transport.close().catch(() => {});
     await session.server.close().catch(() => {});
     pushLog("info", "sse-session-closed", { sessionId });
     res.status(204).end();
