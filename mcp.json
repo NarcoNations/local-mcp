@@ -3,7 +3,7 @@
   "description": "Local NarcoNations research indexer with hybrid search and citations.",
   "transport": {
     "type": "sse",
-    "url": "https://curtis-labour-controls-christina.trycloudflare.com/mcp/sse"
+    "url": "https://excel-clubs-johnson-unions.trycloudflare.com/mcp/sse"
   },
   "metadata": {
     "stdio": {

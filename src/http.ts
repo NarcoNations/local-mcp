@@ -60,7 +60,14 @@ await app.register(rateLimit, {
 function shouldSkipAuth(request: FastifyRequest) {
   const url = request.url;
   if (!env.API_KEY) return true;
-  if (url === "/mcp.json" || url === "/health") return true;
+  if (
+    url === "/mcp.json" ||
+    url === "/health" ||
+    url.startsWith("/mcp/sse") ||
+    url.startsWith("/mcp/messages")
+  ) {
+    return true;
+  }
   return false;
 }
 
