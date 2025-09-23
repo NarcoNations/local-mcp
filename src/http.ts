@@ -64,7 +64,9 @@ function shouldSkipAuth(request: FastifyRequest) {
     url === "/mcp.json" ||
     url === "/health" ||
     url.startsWith("/mcp/sse") ||
-    url.startsWith("/mcp/messages")
+    url.startsWith("/mcp/messages") ||
+    url.startsWith("/sse") ||
+    url.startsWith("/messages")
   ) {
     return true;
   }
@@ -208,11 +210,7 @@ async function startSseSession(request: FastifyRequest, reply: FastifyReply, mes
   }
 }
 
-app.get("/mcp/sse", async (request, reply) => {
-  await startSseSession(request, reply, "/mcp/messages");
-});
-
-app.post("/mcp/messages", async (request, reply) => {
+async function handleMessagesPost(request: FastifyRequest, reply: FastifyReply) {
   const sessionId = getSessionId(request);
   if (!sessionId) {
     reply.code(400).send({ ok: false, error: "sessionId required" });
@@ -234,9 +232,9 @@ app.post("/mcp/messages", async (request, reply) => {
       reply.code(500).send({ ok: false, error: "message failed" });
     }
   }
-});
+}
 
-app.delete("/mcp/messages", async (request, reply) => {
+async function handleMessagesDelete(request: FastifyRequest, reply: FastifyReply) {
   const sessionId = getSessionId(request);
   if (!sessionId) {
     reply.code(400).send({ ok: false, error: "sessionId required" });
@@ -251,7 +249,20 @@ app.delete("/mcp/messages", async (request, reply) => {
   await session.transport.close().catch(() => {});
   await session.server.close().catch(() => {});
   reply.status(204).send();
-});
+}
+
+const sseRoutes = [
+  { ssePath: "/mcp/sse", messagePath: "/mcp/messages" },
+  { ssePath: "/sse", messagePath: "/messages" },
+] as const;
+
+for (const route of sseRoutes) {
+  app.get(route.ssePath, async (request, reply) => {
+    await startSseSession(request, reply, route.messagePath);
+  });
+  app.post(route.messagePath, handleMessagesPost);
+  app.delete(route.messagePath, handleMessagesDelete);
+}
 
 const port = env.PORT;
 const host = env.HOST;

@@ -3,7 +3,7 @@
   "description": "Local NarcoNations research indexer with hybrid search and citations.",
   "transport": {
     "type": "sse",
-    "url": "https://excel-clubs-johnson-unions.trycloudflare.com/mcp/sse"
+    "url": "https://honey-creating-apartment-hint.trycloudflare.com/sse"
   },
   "metadata": {
     "stdio": {
