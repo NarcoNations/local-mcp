@@ -4,6 +4,7 @@ This index adds autonomous studio modules to the existing Spec Kit.
 
 New files in `docs/spec-kit/`:
 - 17-AGENT_TEAM.md — persona roster + modes
+- 17A-DEPARTMENTS.md — department sections (Sales, Marketing, Manufacturing, Strategy Board, Ideas Lab)
 - 18-PROMPT_LIBRARY.md — vault, optimiser, scoring
 - 19-RESEARCH_ENGINE.md — query → structured intel
 - 20-MVP_GENERATOR.md — one-shot build
