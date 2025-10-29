@@ -1,0 +1,35 @@
+spec:
+  id: "20251029-mcp-bridge"
+  title: "HTTP/SSE bridge hardening"
+  owner: "Tech Syndicate"
+  date: "2025-10-29"
+  status: "draft"
+context:
+  problem: |
+    Ensure robust CORS and SSE behaviour for ChatGPT + local GUI.
+  goals:
+    - "Lock down CORS origins"
+    - "Reliable SSE keep-alive"
+  non_goals:
+    - "AuthN/AuthZ for multi-user hosting"
+requirements:
+  functional:
+    - "OPTIONS preflight returns correct headers"
+    - "SSE heartbeats every 15s"
+  non_functional:
+    - performance: "P50 SSE < 100ms"
+    - security: "No wildcard origins"
+interfaces:
+  http:
+    - path: "/events" method: GET
+  cli:
+    - cmd: "npm run http"
+risks:
+  - "Aggressive CORS breaks ChatGPT connection"
+tests:
+  - "curl -i -X OPTIONS http://localhost:5111/reindex"
+rollout:
+  plan:
+    - "PR → docs/spec-kit-v1"
+  fallback:
+    - "Revert commit"
