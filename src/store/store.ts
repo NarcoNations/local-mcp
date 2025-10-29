@@ -151,7 +151,7 @@ export class KnowledgeStore {
         embeddings.set(chunk.id, vector);
       }
 
-      const partial = chunks.some((chunk) => chunk.partial);
+      const partial = chunks.length === 0 || chunks.some((chunk) => chunk.partial);
       this.manifest.files[file] = {
         path: file,
         type: chunks[0]?.type ?? "text",

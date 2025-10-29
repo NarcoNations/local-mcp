@@ -3,226 +3,858 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Local Research MCP – NarcoNations.org</title>
+    <title>Local Research MCP Control Room</title>
     <style>
       :root {
-        color-scheme: dark light;
-        --bg: #05060a;
-        --fg: #f5f5f5;
+        color-scheme: dark;
+        --bg: #050510;
+        --bg-alt: rgba(18, 21, 36, 0.72);
+        --panel: rgba(18, 21, 36, 0.92);
+        --border: rgba(255, 255, 255, 0.08);
+        --text: #f5f7ff;
+        --muted: rgba(230, 235, 255, 0.7);
         --accent: #4ad1ff;
-        --muted: rgba(255, 255, 255, 0.6);
-        --panel: rgba(14, 17, 26, 0.8);
-        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --accent-soft: rgba(74, 209, 255, 0.18);
+        --danger: #ff7a90;
+        --success: #6be49d;
+        font-family: "Inter", "SF Pro Display", "Segoe UI", system-ui, -apple-system, sans-serif;
+        background: var(--bg);
       }
+
       * {
         box-sizing: border-box;
       }
+
       body {
         margin: 0;
         min-height: 100vh;
-        background: radial-gradient(circle at 10% 20%, rgba(60, 92, 255, 0.15), transparent 50%),
-          radial-gradient(circle at 90% 10%, rgba(74, 209, 255, 0.2), transparent 45%),
-          linear-gradient(160deg, var(--bg), #0b0e15 45%, #000 100%);
-        color: var(--fg);
+        background:
+          radial-gradient(circle at 20% 20%, rgba(74, 209, 255, 0.22), transparent 55%),
+          radial-gradient(circle at 80% 0%, rgba(255, 145, 200, 0.18), transparent 50%),
+          linear-gradient(160deg, #03030a 0%, #050510 45%, #01010a 100%);
+        color: var(--text);
+        display: flex;
+        justify-content: center;
+        padding: clamp(1.2rem, 2.5vw, 2.4rem);
+      }
+
+      .app {
+        width: min(1100px, 100%);
         display: flex;
         flex-direction: column;
+        gap: clamp(1.5rem, 2.5vw, 2.75rem);
       }
-      header {
-        padding: clamp(2rem, 6vw, 6rem) clamp(1.5rem, 8vw, 8rem) 0 clamp(1.5rem, 8vw, 8rem);
-        display: flex;
-        flex-direction: column;
-        gap: clamp(1.5rem, 4vw, 3rem);
+
+      .hero {
+        background: linear-gradient(135deg, rgba(24, 43, 96, 0.75), rgba(34, 16, 58, 0.5));
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: clamp(1.5rem, 3vw, 2.5rem);
+        padding: clamp(1.8rem, 4vw, 3.2rem);
+        display: grid;
+        gap: clamp(1.2rem, 2vw, 1.8rem);
+        position: relative;
+        overflow: hidden;
       }
-      header h1 {
-        font-size: clamp(2.5rem, 6vw, 4.5rem);
-        max-width: 28ch;
+
+      .hero::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(circle at 15% 80%, rgba(74, 209, 255, 0.25), transparent 45%),
+          radial-gradient(circle at 90% 15%, rgba(255, 147, 230, 0.25), transparent 55%);
+        pointer-events: none;
+      }
+
+      .hero h1 {
+        margin: 0;
+        font-size: clamp(2rem, 5.8vw, 3.8rem);
         line-height: 1.05;
-        margin: 0;
+        letter-spacing: -0.02em;
       }
-      header p {
+
+      .hero p {
         margin: 0;
-        max-width: 46ch;
-        font-size: clamp(1rem, 2.5vw, 1.2rem);
+        max-width: 50ch;
         color: var(--muted);
+        font-size: clamp(1rem, 2.1vw, 1.25rem);
       }
-      .cta-group {
+
+      .status-chips {
         display: flex;
         flex-wrap: wrap;
-        gap: 1rem;
+        gap: 0.75rem;
+        position: relative;
+        z-index: 1;
       }
-      a.button {
+
+      .chip {
+        background: rgba(6, 10, 22, 0.68);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 999px;
+        padding: 0.35rem 0.95rem;
+        font-size: 0.9rem;
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        padding: 0.9rem 1.6rem;
-        border-radius: 999px;
-        text-decoration: none;
-        background: var(--accent);
-        color: #02060c;
+        gap: 0.4rem;
+        color: var(--muted);
+      }
+
+      .chip strong {
+        color: var(--text);
         font-weight: 600;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        box-shadow: 0 18px 40px rgba(74, 209, 255, 0.3);
       }
-      a.button.secondary {
-        background: transparent;
-        color: var(--fg);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        box-shadow: none;
-      }
-      a.button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 20px 44px rgba(74, 209, 255, 0.4);
-      }
-      main {
-        padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 8vw, 8rem) clamp(3rem, 8vw, 6rem) clamp(1.5rem, 8vw, 8rem);
+
+      main.content {
         display: grid;
-        gap: clamp(2rem, 4vw, 3.5rem);
+        gap: clamp(1.5rem, 2vw, 2rem);
       }
-      section {
+
+      @media (min-width: 960px) {
+        main.content {
+          grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr);
+        }
+        .search-panel {
+          grid-row: span 2;
+        }
+      }
+
+      .panel {
         background: var(--panel);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 24px;
-        padding: clamp(1.5rem, 4vw, 3rem);
-        backdrop-filter: blur(12px);
-        box-shadow: 0 24px 60px rgba(2, 6, 12, 0.45);
-      }
-      section h2 {
-        margin-top: 0;
-        font-size: clamp(1.4rem, 3vw, 2rem);
-      }
-      .grid {
-        display: grid;
-        gap: 1.5rem;
-      }
-      .grid.two {
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      }
-      .card {
-        padding: 1.2rem;
-        border-radius: 18px;
-        background: rgba(12, 16, 24, 0.85);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border);
+        border-radius: clamp(1.2rem, 2vw, 1.8rem);
+        padding: clamp(1.4rem, 2.5vw, 2.2rem);
         display: flex;
         flex-direction: column;
-        gap: 0.6rem;
+        gap: 1.2rem;
+        backdrop-filter: blur(16px);
+        box-shadow: 0 28px 60px rgba(4, 8, 20, 0.35);
       }
-      .card h3 {
+
+      .panel h2 {
         margin: 0;
-        font-size: 1.1rem;
+        font-size: clamp(1.25rem, 2.3vw, 1.6rem);
+        letter-spacing: -0.01em;
       }
-      .card p {
-        margin: 0;
+
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      label,
+      legend {
+        font-size: 0.95rem;
+        font-weight: 500;
         color: var(--muted);
-        font-size: 0.95rem;
       }
-      code {
-        display: inline-block;
-        padding: 0.3rem 0.6rem;
-        border-radius: 10px;
-        background: rgba(255, 255, 255, 0.06);
-        font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
-        font-size: 0.95rem;
+
+      input,
+      button,
+      textarea {
+        font: inherit;
       }
-      footer {
-        padding: clamp(1.5rem, 4vw, 2.5rem);
-        text-align: center;
+
+      input[type="text"],
+      input[type="number"],
+      textarea {
+        width: 100%;
+        border-radius: 0.9rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(4, 8, 18, 0.75);
+        color: var(--text);
+        padding: 0.75rem 1rem;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      input:focus,
+      textarea:focus {
+        outline: none;
+        border-color: rgba(74, 209, 255, 0.6);
+        box-shadow: 0 0 0 3px rgba(74, 209, 255, 0.25);
+      }
+
+      .form-row {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .form-row .field {
+        flex: 1 1 130px;
+      }
+
+      fieldset {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 1rem;
+        padding: 1rem;
+        margin: 0;
+      }
+
+      .chip-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+      }
+
+      .chip-group label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        background: var(--accent-soft);
+        color: var(--accent);
+        border-radius: 999px;
+        padding: 0.35rem 0.85rem;
+        border: 1px solid rgba(74, 209, 255, 0.35);
+        cursor: pointer;
         font-size: 0.9rem;
-        color: rgba(255, 255, 255, 0.45);
       }
-      @media (min-width: 900px) {
-        main {
-          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+
+      .chip-group input {
+        accent-color: var(--accent);
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      button {
+        border-radius: 999px;
+        border: none;
+        padding: 0.75rem 1.4rem;
+        cursor: pointer;
+        font-weight: 600;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      }
+
+      button.primary {
+        background: linear-gradient(135deg, #4ad1ff, #8fe3ff);
+        color: #04121f;
+        box-shadow: 0 16px 40px rgba(74, 209, 255, 0.35);
+      }
+
+      button.ghost {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      .results {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .result-card {
+        border-radius: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(6, 12, 24, 0.75);
+        overflow: hidden;
+        transition: border-color 0.2s ease, transform 0.2s ease;
+      }
+
+      .result-card[open] {
+        border-color: rgba(74, 209, 255, 0.35);
+        transform: translateY(-2px);
+      }
+
+      .result-card summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 1rem 1.2rem;
+        display: grid;
+        gap: 0.6rem;
+        outline: none;
+      }
+
+      .result-card summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .result-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 1rem;
+      }
+
+      .result-title {
+        font-size: 1rem;
+        font-weight: 600;
+        word-break: break-word;
+      }
+
+      .result-meta {
+        font-size: 0.85rem;
+        color: rgba(231, 235, 255, 0.65);
+      }
+
+      .result-snippet {
+        margin: 0;
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+
+      .result-body {
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 0.9rem 1.2rem 1.2rem;
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .result-text {
+        margin: 0;
+        font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+        font-size: 0.85rem;
+        white-space: pre-wrap;
+        background: rgba(8, 14, 26, 0.75);
+        padding: 0.85rem;
+        border-radius: 0.8rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        max-height: 220px;
+        overflow-y: auto;
+      }
+
+      .result-actions {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .stat-grid {
+        display: grid;
+        gap: 0.9rem;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      }
+
+      .stat-card {
+        background: rgba(8, 16, 32, 0.75);
+        border-radius: 0.9rem;
+        padding: 0.9rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+
+      .stat-card .label {
+        font-size: 0.8rem;
+        color: rgba(231, 235, 255, 0.6);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .stat-card .value {
+        font-size: 1.4rem;
+        font-weight: 600;
+      }
+
+      .stat-meta {
+        margin: 0;
+        color: rgba(231, 235, 255, 0.6);
+        font-size: 0.9rem;
+      }
+
+      .control-form {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .control-feedback {
+        min-height: 1.2rem;
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+
+      .control-feedback.success {
+        color: var(--success);
+      }
+
+      .control-feedback.error {
+        color: var(--danger);
+      }
+
+      .log-stream {
+        display: grid;
+        gap: 0.65rem;
+        max-height: 320px;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+      }
+
+      .log-entry {
+        display: grid;
+        gap: 0.2rem;
+        border-left: 3px solid rgba(74, 209, 255, 0.5);
+        padding-left: 0.75rem;
+      }
+
+      .log-entry.warn {
+        border-left-color: #ffc980;
+      }
+
+      .log-entry.error {
+        border-left-color: var(--danger);
+      }
+
+      .log-entry time {
+        font-size: 0.75rem;
+        color: rgba(231, 235, 255, 0.55);
+        letter-spacing: 0.03em;
+      }
+
+      .log-entry .message {
+        font-size: 0.95rem;
+        font-weight: 500;
+      }
+
+      .log-entry pre {
+        margin: 0;
+        font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+        background: rgba(8, 16, 32, 0.6);
+        border-radius: 0.75rem;
+        padding: 0.6rem 0.75rem;
+        font-size: 0.75rem;
+        white-space: pre-wrap;
+        color: rgba(231, 235, 255, 0.85);
+      }
+
+      @media (max-width: 720px) {
+        body {
+          padding: 1rem;
         }
-        main section:first-child {
-          grid-column: span 2;
+        .hero {
+          border-radius: 1.5rem;
+        }
+        .panel {
+          border-radius: 1.1rem;
+        }
+        .status-chips {
+          gap: 0.5rem;
+        }
+        .chip {
+          font-size: 0.85rem;
         }
       }
     </style>
   </head>
   <body>
-    <header>
-      <h1>Local Research MCP for NarcoNations.org</h1>
-      <p>
-        Secure, offline indexing and retrieval for your entire NarcoNations research corpus. This service loads PDFs, Markdown,
-        Word, plain text, and Apple Pages files, builds hybrid search indexes, and returns grounded citations through the Model
-        Context Protocol.
-      </p>
-      <div class="cta-group">
-        <a class="button" href="https://modelcontextprotocol.io" target="_blank" rel="noreferrer">Model Context Protocol</a>
-        <a class="button secondary" href="https://github.com/modelcontextprotocol/typescript-sdk" target="_blank" rel="noreferrer"
-          >TypeScript SDK</a
-        >
-      </div>
-    </header>
-    <main>
-      <section>
-        <h2>Quickstart</h2>
-        <div class="grid two">
-          <div class="card">
-            <h3>Install dependencies</h3>
-            <p><code>npm install</code></p>
-          </div>
-          <div class="card">
-            <h3>Prefetch MiniLM (optional)</h3>
-            <p><code>npm run models:download</code></p>
-          </div>
-          <div class="card">
-            <h3>Index your corpus</h3>
-            <p><code>npm run index -- ./docs ./public/dossiers</code></p>
-          </div>
-          <div class="card">
-            <h3>Start the MCP server</h3>
-            <p><code>npm run dev</code></p>
-          </div>
+    <div class="app">
+      <header class="hero">
+        <div>
+          <h1>Local Research MCP Control Room</h1>
+          <p>
+            Search, inspect, and maintain the NarcoNations research corpus with grounded citations and instant visibility into
+            the indexing pipeline.
+          </p>
         </div>
-      </section>
-      <section>
-        <h2>Available MCP Tools</h2>
-        <div class="grid two">
-          <div class="card">
-            <h3>search_local</h3>
-            <p>Hybrid dense + keyword retrieval with precise citations for every chunk.</p>
-          </div>
-          <div class="card">
-            <h3>get_doc</h3>
-            <p>Return the full text for a file or a single PDF/Pages page.</p>
-          </div>
-          <div class="card">
-            <h3>reindex &amp; watch</h3>
-            <p>Refresh the corpus on demand or stream file system changes into the index.</p>
-          </div>
-          <div class="card">
-            <h3>stats</h3>
-            <p>Expose manifest metrics: files indexed, chunks by type, and embedding cache counts.</p>
-          </div>
-          <div class="card">
-            <h3>import_chatgpt_export</h3>
-            <p>Convert ChatGPT exports into Markdown and automatically reindex the output directory.</p>
-          </div>
+        <div class="status-chips">
+          <span class="chip">Files indexed: <strong id="status-files">0</strong></span>
+          <span class="chip">Chunks: <strong id="status-chunks">0</strong></span>
+          <span class="chip">Embeddings cached: <strong id="status-embeddings">0</strong></span>
         </div>
-      </section>
-      <section>
-        <h2>Designed for the Field</h2>
-        <div class="grid two">
-          <div class="card">
-            <h3>Offline-first</h3>
-            <p>No external APIs or cloud calls. Embeddings are generated locally with Xenova MiniLM.</p>
+      </header>
+      <main class="content">
+        <section class="panel search-panel">
+          <h2>Search corpus</h2>
+          <form id="search-form">
+            <div class="field">
+              <label for="query">Query</label>
+              <input id="query" name="query" type="text" placeholder="e.g. Antwerp cocaine port" required />
+            </div>
+            <div class="form-row">
+              <div class="field">
+                <label for="k">Results</label>
+                <input id="k" name="k" type="number" min="1" max="32" value="8" />
+              </div>
+              <div class="field">
+                <label for="alpha">Hybrid alpha</label>
+                <input id="alpha" name="alpha" type="number" step="0.05" min="0" max="1" value="0.65" />
+              </div>
+            </div>
+            <fieldset>
+              <legend>Filter by file type</legend>
+              <div class="chip-group">
+                <label><input type="checkbox" name="type" value="pdf" /> PDF</label>
+                <label><input type="checkbox" name="type" value="markdown" /> Markdown</label>
+                <label><input type="checkbox" name="type" value="text" /> Text</label>
+                <label><input type="checkbox" name="type" value="word" /> Word</label>
+                <label><input type="checkbox" name="type" value="pages" /> Pages</label>
+              </div>
+            </fieldset>
+            <div class="form-actions">
+              <button type="submit" class="primary">Run search</button>
+              <button type="button" id="clear-results" class="ghost">Clear results</button>
+            </div>
+          </form>
+          <div id="results" class="results" aria-live="polite"></div>
+        </section>
+
+        <section class="panel stats-panel">
+          <h2>Index status</h2>
+          <div class="stat-grid">
+            <div class="stat-card">
+              <span class="label">PDF pages</span>
+              <span class="value" id="stat-pdf">0</span>
+            </div>
+            <div class="stat-card">
+              <span class="label">Markdown chunks</span>
+              <span class="value" id="stat-markdown">0</span>
+            </div>
+            <div class="stat-card">
+              <span class="label">Text chunks</span>
+              <span class="value" id="stat-text">0</span>
+            </div>
+            <div class="stat-card">
+              <span class="label">Word chunks</span>
+              <span class="value" id="stat-word">0</span>
+            </div>
+            <div class="stat-card">
+              <span class="label">Pages chunks</span>
+              <span class="value" id="stat-pages">0</span>
+            </div>
           </div>
-          <div class="card">
-            <h3>Format coverage</h3>
-            <p>OCR-aware PDF parsing, Markdown with front-matter, clean DOCX extraction, and best-effort Pages support.</p>
+          <p class="stat-meta" id="last-indexed">Last indexed: —</p>
+          <div class="form-actions">
+            <button type="button" id="refresh-stats" class="ghost">Refresh stats</button>
           </div>
-          <div class="card">
-            <h3>Deterministic citations</h3>
-            <p>Every result includes the file path, page, character offsets, and a context snippet.</p>
-          </div>
-          <div class="card">
-            <h3>Secure boundaries</h3>
-            <p>Roots whitelist, symlink guards, and ZipSlip protection keep the index locked to approved folders.</p>
-          </div>
-        </div>
-      </section>
-    </main>
-    <footer>Built for NarcoNations.org · Local Research MCP v1.1 · Deployable on Vercel or offline</footer>
+        </section>
+
+        <section class="panel control-panel">
+          <h2>Maintenance</h2>
+          <form id="reindex-form" class="control-form">
+            <label for="reindex-path">Reindex path (optional)</label>
+            <input id="reindex-path" type="text" placeholder="./docs or leave blank for configured roots" />
+            <button type="submit" class="primary">Reindex now</button>
+          </form>
+          <form id="watch-form" class="control-form">
+            <label for="watch-paths">Watch directories (comma separated, optional)</label>
+            <input id="watch-paths" type="text" placeholder="./docs, ./public/dossiers" />
+            <button type="submit" class="ghost">Start watcher</button>
+          </form>
+          <form id="import-form" class="control-form">
+            <label for="import-export">ChatGPT export directory</label>
+            <input id="import-export" type="text" placeholder="~/Downloads/chatgpt-export" />
+            <label for="import-out">Output directory</label>
+            <input id="import-out" type="text" placeholder="./docs/chatgpt-export-md" value="./docs/chatgpt-export-md" />
+            <button type="submit" class="ghost">Import &amp; reindex</button>
+          </form>
+          <div id="control-feedback" class="control-feedback" role="status" aria-live="polite"></div>
+        </section>
+
+        <section class="panel logs-panel">
+          <h2>Activity log</h2>
+          <div id="logs" class="log-stream" aria-live="polite"></div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module">
+      const resultsContainer = document.getElementById("results");
+      const logsContainer = document.getElementById("logs");
+      const controlFeedback = document.getElementById("control-feedback");
+      const statusFiles = document.getElementById("status-files");
+      const statusChunks = document.getElementById("status-chunks");
+      const statusEmbeddings = document.getElementById("status-embeddings");
+      const statElements = {
+        pdf: document.getElementById("stat-pdf"),
+        markdown: document.getElementById("stat-markdown"),
+        text: document.getElementById("stat-text"),
+        word: document.getElementById("stat-word"),
+        pages: document.getElementById("stat-pages"),
+      };
+      const lastIndexed = document.getElementById("last-indexed");
+
+      async function api(path, options = {}) {
+        const response = await fetch(path, {
+          headers: { "Content-Type": "application/json" },
+          ...options,
+        });
+        const body = await response.json().catch(() => ({ ok: false, error: "Invalid JSON response" }));
+        if (!response.ok || !body.ok) {
+          const message = body?.error || response.statusText || "Request failed";
+          throw new Error(message);
+        }
+        return body.data;
+      }
+
+      function formatNumber(value) {
+        return new Intl.NumberFormat().format(value ?? 0);
+      }
+
+      function formatTimestamp(value) {
+        if (!value) return "Last indexed: —";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "Last indexed: —";
+        return `Last indexed: ${date.toLocaleString()}`;
+      }
+
+      function createResultCard(result) {
+        const details = document.createElement("details");
+        details.className = "result-card";
+        const summary = document.createElement("summary");
+        const header = document.createElement("div");
+        header.className = "result-header";
+        const title = document.createElement("div");
+        title.className = "result-title";
+        title.textContent = result.citation.filePath;
+        const meta = document.createElement("div");
+        meta.className = "result-meta";
+        const page = result.citation.page ? `Page ${result.citation.page}` : "Full document";
+        meta.textContent = `${page} · score ${(result.score ?? 0).toFixed(3)}`;
+        header.appendChild(title);
+        header.appendChild(meta);
+        const snippet = document.createElement("p");
+        snippet.className = "result-snippet";
+        snippet.textContent = result.citation.snippet || result.text.slice(0, 200);
+        summary.appendChild(header);
+        summary.appendChild(snippet);
+        details.appendChild(summary);
+
+        const body = document.createElement("div");
+        body.className = "result-body";
+        const actions = document.createElement("div");
+        actions.className = "result-actions";
+        const copyButton = document.createElement("button");
+        copyButton.type = "button";
+        copyButton.className = "ghost";
+        copyButton.textContent = "Copy citation";
+        copyButton.addEventListener("click", async (event) => {
+          event.stopPropagation();
+          const citation = `${result.citation.filePath}${result.citation.page ? ` (page ${result.citation.page})` : ""}`;
+          try {
+            await navigator.clipboard.writeText(citation);
+            copyButton.textContent = "Copied";
+            setTimeout(() => {
+              copyButton.textContent = "Copy citation";
+            }, 2000);
+          } catch (err) {
+            copyButton.textContent = "Clipboard error";
+            console.error(err);
+            setTimeout(() => {
+              copyButton.textContent = "Copy citation";
+            }, 2000);
+          }
+        });
+        actions.appendChild(copyButton);
+        body.appendChild(actions);
+        const text = document.createElement("pre");
+        text.className = "result-text";
+        text.textContent = "";
+        body.appendChild(text);
+        details.appendChild(body);
+
+        let loaded = false;
+        details.addEventListener("toggle", async () => {
+          if (!details.open || loaded) return;
+          loaded = true;
+          text.textContent = "Loading document…";
+          try {
+            const doc = await api("/api/doc", {
+              method: "POST",
+              body: JSON.stringify({ path: result.citation.filePath, page: result.citation.page }),
+            });
+            text.textContent = doc.text || "No text extracted for this selection.";
+          } catch (error) {
+            text.textContent = `Failed to load document: ${error.message}`;
+          }
+        });
+
+        return details;
+      }
+
+      function renderResults(results) {
+        resultsContainer.innerHTML = "";
+        if (!results?.length) {
+          const empty = document.createElement("p");
+          empty.textContent = "No results yet. Submit a search to explore the corpus.";
+          empty.style.color = "var(--muted)";
+          resultsContainer.appendChild(empty);
+          return;
+        }
+        results.forEach((result) => {
+          resultsContainer.appendChild(createResultCard(result));
+        });
+      }
+
+      async function loadStats() {
+        try {
+          const stats = await api("/api/stats");
+          statusFiles.textContent = formatNumber(Object.keys(stats.files || {}).length);
+          statusChunks.textContent = formatNumber(stats.chunks);
+          statusEmbeddings.textContent = formatNumber(stats.embeddingsCached);
+          if (stats.byType) {
+            Object.entries(statElements).forEach(([key, element]) => {
+              element.textContent = formatNumber(stats.byType[key] ?? 0);
+            });
+          }
+          lastIndexed.textContent = formatTimestamp(stats.lastIndexedAt);
+        } catch (error) {
+          console.error("Failed to load stats", error);
+        }
+      }
+
+      function setFeedback(message, kind = "info") {
+        controlFeedback.textContent = message;
+        controlFeedback.classList.remove("success", "error");
+        if (kind === "success") controlFeedback.classList.add("success");
+        if (kind === "error") controlFeedback.classList.add("error");
+      }
+
+      document.getElementById("search-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const formData = new FormData(event.target);
+        const query = formData.get("query");
+        const k = Number(formData.get("k"));
+        const alpha = Number(formData.get("alpha"));
+        const filters = Array.from(formData.getAll("type"));
+        try {
+          const payload = { query, k, alpha };
+          if (filters.length) {
+            payload.filters = { type: filters };
+          }
+          const data = await api("/api/search", {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          renderResults(data.results);
+        } catch (error) {
+          renderResults([]);
+          const errorCard = document.createElement("p");
+          errorCard.style.color = "var(--danger)";
+          errorCard.textContent = `Search failed: ${error.message}`;
+          resultsContainer.appendChild(errorCard);
+        }
+      });
+
+      document.getElementById("clear-results").addEventListener("click", () => {
+        renderResults([]);
+      });
+
+      document.getElementById("refresh-stats").addEventListener("click", () => {
+        loadStats();
+      });
+
+      document.getElementById("reindex-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const value = document.getElementById("reindex-path").value.trim();
+        try {
+          const payload = value
+            ? { paths: value.split(",").map((part) => part.trim()).filter(Boolean) }
+            : {};
+          const stats = await api("/api/reindex", {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          setFeedback(`Reindexed: ${stats.indexed} chunks updated across ${stats.updated} file(s).`, "success");
+          loadStats();
+        } catch (error) {
+          setFeedback(`Reindex failed: ${error.message}`, "error");
+        }
+      });
+
+      document.getElementById("watch-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const value = document.getElementById("watch-paths").value.trim();
+        try {
+          const payload = value
+            ? { paths: value.split(",").map((part) => part.trim()).filter(Boolean) }
+            : {};
+          const info = await api("/api/watch", {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          setFeedback(`Watching ${info.watching.length} path(s).`, "success");
+        } catch (error) {
+          setFeedback(`Watch failed: ${error.message}`, "error");
+        }
+      });
+
+      document.getElementById("import-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const exportPath = document.getElementById("import-export").value.trim();
+        const outDir = document.getElementById("import-out").value.trim();
+        if (!exportPath) {
+          setFeedback("Provide a ChatGPT export directory before importing.", "error");
+          return;
+        }
+        try {
+          const result = await api("/api/import", {
+            method: "POST",
+            body: JSON.stringify({ exportPath, outDir: outDir || undefined }),
+          });
+          setFeedback(`Imported ${result.filesWritten} file(s), indexed ${result.indexed} chunk(s).`, "success");
+          loadStats();
+        } catch (error) {
+          setFeedback(`Import failed: ${error.message}`, "error");
+        }
+      });
+
+      function appendLog(entry) {
+        const wrapper = document.createElement("div");
+        wrapper.className = `log-entry ${entry.level}`;
+        const time = document.createElement("time");
+        time.textContent = new Date(entry.time).toLocaleTimeString();
+        const message = document.createElement("div");
+        message.className = "message";
+        message.textContent = entry.message;
+        wrapper.appendChild(time);
+        wrapper.appendChild(message);
+        if (entry.details) {
+          const pre = document.createElement("pre");
+          pre.textContent = JSON.stringify(entry.details, null, 2);
+          wrapper.appendChild(pre);
+        }
+        logsContainer.appendChild(wrapper);
+        logsContainer.scrollTop = logsContainer.scrollHeight;
+      }
+
+      async function primeLogs() {
+        try {
+          const existing = await api("/api/logs");
+          logsContainer.innerHTML = "";
+          existing.forEach((log) => appendLog(log));
+        } catch (error) {
+          console.warn("Failed to fetch initial logs", error);
+        }
+      }
+
+      function startLogStream() {
+        const source = new EventSource("/api/logs/stream");
+        source.onmessage = (event) => {
+          try {
+            const entry = JSON.parse(event.data);
+            appendLog(entry);
+          } catch (error) {
+            console.warn("Failed to parse log entry", error);
+          }
+        };
+        source.onerror = () => {
+          const banner = document.createElement("div");
+          banner.className = "log-entry error";
+          const msg = document.createElement("div");
+          msg.className = "message";
+          msg.textContent = "Log stream disconnected. Retrying…";
+          banner.appendChild(msg);
+          logsContainer.appendChild(banner);
+          source.close();
+          setTimeout(startLogStream, 2000);
+        };
+      }
+
+      renderResults([]);
+      loadStats();
+      primeLogs().then(startLogStream);
+    </script>
   </body>
 </html>

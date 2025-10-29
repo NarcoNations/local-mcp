@@ -2,6 +2,7 @@ declare module "pdf-parse" {
   interface PDFOptions {
     pagerender?: (pageData: any) => Promise<string> | string;
     disableCombineTextItems?: boolean;
+    disableFontFace?: boolean;
   }
   interface PDFData {
     text: string;
