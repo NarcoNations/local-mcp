@@ -2,9 +2,11 @@ export const runtime = 'nodejs';
 import { NextRequest } from 'next/server';
 import { logEvent } from '@/examples/next-adapter/lib/historian';
 import { convertWithMd, writeToSupabase, makeSlug } from '@/examples/next-adapter/lib/ingest/convert';
+import { requireScope } from '@/examples/next-adapter/lib/security/apiAuth';
 
 export async function POST(req: NextRequest) {
   try {
+    await requireScope(req, 'ingest:*');
     const contentType = req.headers.get('content-type') || '';
     if (!contentType.includes('multipart/form-data')) {
       return new Response('Expected multipart/form-data with file', { status: 400 });

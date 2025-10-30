@@ -2,9 +2,11 @@ export const runtime = 'nodejs';
 import { NextRequest } from 'next/server';
 import { logEvent } from '@/examples/next-adapter/lib/historian';
 import { processChatExportFromUrl } from '@/examples/next-adapter/lib/corpus/chatgpt';
+import { requireScope } from '@/examples/next-adapter/lib/security/apiAuth';
 
 export async function POST(req: NextRequest) {
   try {
+    await requireScope(req, 'ingest:*');
     const { fileUrl } = await req.json();
     if (!fileUrl) return new Response('fileUrl required', { status: 400 });
     const result = await processChatExportFromUrl(fileUrl);

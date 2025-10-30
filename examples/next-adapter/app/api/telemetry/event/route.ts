@@ -2,6 +2,7 @@ export const runtime = 'nodejs';
 
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { requireScope } from '@/examples/next-adapter/lib/security/apiAuth';
 
 const TelemetryBody = z.object({
   campaign_id: z.string().uuid().optional(),
@@ -38,6 +39,7 @@ async function ensureChannelId(supabase, key) {
 
 export async function POST(req) {
   try {
+    await requireScope(req, 'feeds:*');
     if (!bearerOk(req)) return new Response('Unauthorized', { status: 401 });
 
     const json = await req.json();
