@@ -1,4 +1,4 @@
-import { sbServer } from '@/examples/next-adapter/lib/supabase/server';
+import { sbServer } from './supabase/server';
 
 export async function logEvent(e: { source: string; kind: string; title: string; body?: string; link?: string; meta?: any }) {
   try {

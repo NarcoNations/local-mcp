@@ -1,8 +1,7 @@
-export default function Page() {
-  return (
-    <main style={{ padding: 24 }}>
-      <h1>Knowledge</h1>
-      <p>Knowledge/Embeddings index with basic search (coming soon).</p>
-    </main>
-  );
+import { KnowledgeView } from "../../src/components/knowledge/KnowledgeView";
+import { listKnowledge } from "../../src/data/knowledge";
+
+export default async function KnowledgePage() {
+  const entries = await listKnowledge();
+  return <KnowledgeView entries={entries} />;
 }

@@ -1,24 +1,25 @@
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+import type { ReactNode } from "react";
+import type { Metadata } from "next";
+import "./globals.css";
+import { AppShell } from "../src/components/AppShell";
+import { ToastProvider } from "../src/components/Toast";
+import { ThemeScript } from "../src/hooks/useTheme";
+
+export const metadata: Metadata = {
+  title: "VibeOS Ultimate Dashboard",
+  description: "Mission control for ingest, corpus, knowledge, historian, and more.",
+};
+
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <body>
-        <header style={{ padding: '12px 16px', borderBottom: '1px solid #eee', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <strong>VibeOS Adapter</strong>
-          <nav style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <a href="/">Home</a>
-            <a href="/timeline">Historian</a>
-            <a href="/workroom">Workroom</a>
-            <a href="/mvp">One‑Shot MVP</a>
-            <a href="/library/prompts">Prompt Library</a>
-            <a href="/research">Research Engine</a>
-            <a href="/play/map">Map Playground</a>
-            <a href="/play/social">Social Playground</a>
-            <a href="/knowledge">Knowledge</a>
-            <a href="/search">Search</a>
-            <a href="/api-manager">API Manager</a>
-          </nav>
-        </header>
-        <div style={{ maxWidth: 960, margin: '0 auto' }}>{children}</div>
+    <html lang="en" className="theme-light" suppressHydrationWarning>
+      <head>
+        <ThemeScript />
+      </head>
+      <body className="min-h-screen bg-[var(--color-background)] text-[var(--color-text)]">
+        <ToastProvider>
+          <AppShell>{children}</AppShell>
+        </ToastProvider>
       </body>
     </html>
   );

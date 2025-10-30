@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { unzip } from 'unzipit';
-import { sbServer } from '@/examples/next-adapter/lib/supabase/server';
+import { sbServer } from '../supabase/server';
 
 function safeBaseName(name: string) {
   const dot = name.lastIndexOf('.');
