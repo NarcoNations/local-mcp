@@ -1,7 +1,7 @@
 export const runtime = 'nodejs';
 import { NextRequest } from 'next/server';
-import { logEvent } from '@/examples/next-adapter/lib/historian';
-import { processChatExportFromUrl } from '@/examples/next-adapter/lib/corpus/chatgpt';
+import { logEvent } from '../../../../lib/historian';
+import { processChatExportFromUrl } from '../../../../lib/corpus/chatgpt';
 
 export async function POST(req: NextRequest) {
   try {

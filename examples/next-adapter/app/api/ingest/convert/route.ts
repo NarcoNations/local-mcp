@@ -1,7 +1,7 @@
 export const runtime = 'nodejs';
 import { NextRequest } from 'next/server';
-import { logEvent } from '@/examples/next-adapter/lib/historian';
-import { convertWithMd, writeToSupabase, makeSlug } from '@/examples/next-adapter/lib/ingest/convert';
+import { logEvent } from '../../../../lib/historian';
+import { convertWithMd, writeToSupabase, makeSlug } from '../../../../lib/ingest/convert';
 
 export async function POST(req: NextRequest) {
   try {

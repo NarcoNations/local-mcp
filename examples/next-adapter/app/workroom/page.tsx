@@ -1,8 +1,7 @@
-export default function Page() {
-  return (
-    <main style={{ padding: 24 }}>
-      <h1>Workroom (Whiteboard OS)</h1>
-      <p>Sketch → Export JSON → One‑Shot MVP. (Placeholder UI)</p>
-    </main>
-  );
+import { WorkroomView } from "../../src/components/workroom/WorkroomView";
+import { getInitialStickies } from "../../src/data/workroom";
+
+export default async function WorkroomPage() {
+  const initialStickies = await getInitialStickies();
+  return <WorkroomView initialStickies={initialStickies} />;
 }

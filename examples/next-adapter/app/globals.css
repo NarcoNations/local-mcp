@@ -1,0 +1,167 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --font-body: 'InterVariable', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+
+  --color-background: rgba(248, 248, 252, 1);
+  --color-surface: rgba(255, 255, 255, 0.88);
+  --color-surface-elevated: rgba(255, 255, 255, 0.96);
+  --color-surface-glass: rgba(255, 255, 255, 0.6);
+  --color-border: rgba(204, 208, 224, 0.7);
+  --color-border-strong: rgba(180, 184, 204, 0.88);
+  --color-text: rgba(18, 24, 32, 0.94);
+  --color-text-muted: rgba(18, 24, 32, 0.68);
+  --color-accent: rgba(36, 165, 208, 1);
+  --color-accent-soft: rgba(36, 165, 208, 0.16);
+  --color-success: rgba(22, 163, 74, 1);
+  --color-success-soft: rgba(22, 163, 74, 0.18);
+  --color-warning: rgba(217, 119, 6, 1);
+  --color-warning-soft: rgba(217, 119, 6, 0.18);
+  --color-danger: rgba(220, 38, 38, 1);
+  --color-danger-soft: rgba(220, 38, 38, 0.2);
+  --color-info: rgba(14, 165, 233, 1);
+  --color-info-soft: rgba(14, 165, 233, 0.2);
+  --color-focus: rgba(36, 165, 208, 0.55);
+
+  --shadow-subtle: 0px 1px 2px rgba(12, 21, 37, 0.08);
+  --shadow-raised: 0px 18px 34px rgba(12, 21, 37, 0.08);
+  --shadow-pop: 0px 22px 45px rgba(12, 21, 37, 0.18);
+
+  --transition-base: 150ms ease;
+  --border-radius-sm: 10px;
+  --border-radius-md: 14px;
+  --border-radius-lg: 20px;
+  --focus-ring-size: 2px;
+}
+
+html.theme-dark {
+  color-scheme: dark;
+  --color-background: rgba(3, 4, 7, 1);
+  --color-surface: rgba(14, 18, 28, 0.92);
+  --color-surface-elevated: rgba(18, 24, 36, 0.95);
+  --color-surface-glass: rgba(14, 18, 28, 0.7);
+  --color-border: rgba(48, 54, 72, 0.78);
+  --color-border-strong: rgba(72, 78, 96, 0.94);
+  --color-text: rgba(235, 241, 255, 0.92);
+  --color-text-muted: rgba(235, 241, 255, 0.68);
+  --color-accent: rgba(36, 208, 208, 1);
+  --color-accent-soft: rgba(36, 208, 208, 0.2);
+  --color-success: rgba(16, 185, 129, 1);
+  --color-success-soft: rgba(16, 185, 129, 0.2);
+  --color-warning: rgba(250, 204, 21, 1);
+  --color-warning-soft: rgba(250, 204, 21, 0.3);
+  --color-danger: rgba(248, 113, 113, 1);
+  --color-danger-soft: rgba(248, 113, 113, 0.24);
+  --color-info: rgba(96, 165, 250, 1);
+  --color-info-soft: rgba(96, 165, 250, 0.24);
+  --color-focus: rgba(190, 24, 93, 0.6);
+
+  --shadow-subtle: 0px 1px 2px rgba(2, 5, 12, 0.45);
+  --shadow-raised: 0px 18px 34px rgba(2, 5, 12, 0.55);
+  --shadow-pop: 0px 24px 48px rgba(2, 5, 12, 0.65);
+}
+
+html, body {
+  background: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+*, *::before, *::after {
+  border-color: var(--color-border);
+}
+
+::selection {
+  background: var(--color-accent-soft);
+  color: var(--color-text);
+}
+
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  button {
+    font-family: inherit;
+  }
+}
+
+@layer components {
+  .shortcut {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-border);
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1;
+    color: var(--color-text-muted);
+    background: var(--color-surface);
+  }
+}
+
+@layer utilities {
+  .focus-ring:focus-visible {
+    outline: var(--focus-ring-size) solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  .surface-subdued {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+  }
+
+  .surface-elevated {
+    background: var(--color-surface-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-raised);
+  }
+
+  .surface-glass {
+    background: var(--color-surface-glass);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: var(--border-radius-lg);
+    backdrop-filter: blur(24px);
+  }
+
+  .ring-outline {
+    box-shadow: 0 0 0 var(--focus-ring-size) var(--color-focus);
+  }
+
+  .elevate-sm {
+    box-shadow: var(--shadow-subtle);
+  }
+
+  .elevate-lg {
+    box-shadow: var(--shadow-pop);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
