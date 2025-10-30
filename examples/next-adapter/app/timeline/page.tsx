@@ -1,16 +1,7 @@
-import { sbServer } from '@/examples/next-adapter/lib/supabase/server';
+import { getTimelineEvents } from '../../src/data/timeline';
+import { TimelineView } from '../../src/components/timeline/TimelineView';
 
-export default async function TimelinePage() {
-  const sb = sbServer();
-  const { data } = await sb.from('events').select('*').order('ts', { ascending: false }).limit(50);
-  return (
-    <main style={{ padding: 24 }}>
-      <h1>Historian — Recent Events</h1>
-      <ul>
-        {(data || []).map((e) => (
-          <li key={e.id}>[{e.ts}] <strong>{e.kind}</strong> — {e.title}</li>
-        ))}
-      </ul>
-    </main>
-  );
+export default async function Page() {
+  const events = await getTimelineEvents();
+  return <TimelineView events={events} />;
 }
