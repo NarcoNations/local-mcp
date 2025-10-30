@@ -9,10 +9,15 @@ export default function Page() {
         <li>Workroom (Whiteboard OS) → <a href="/workroom">/workroom</a></li>
         <li>Prompt Library → <a href="/library/prompts">/library/prompts</a></li>
         <li>Research Engine → <a href="/research">/research</a></li>
+        <li>Metrics Observatory → <a href="/metrics">/metrics</a></li>
+        <li>Eval Lab → <a href="/evals">/evals</a></li>
+        <li>Ethics Council → <a href="/policy">/policy</a></li>
         <li>Map Playground → <a href="/play/map">/play/map</a></li>
         <li>Social Playground → <a href="/play/social">/play/social</a></li>
         <li>API Manager → <a href="/api-manager">/api-manager</a></li>
         <li>Knowledge & Search → <a href="/knowledge">/knowledge</a>, <a href="/search">/search</a></li>
+        <li>Publish Packages → <a href="/publish">/publish</a></li>
+        <li>Build Briefs → <a href="/mvp">/mvp</a></li>
       </ul>
     </main>
   );

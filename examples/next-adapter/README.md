@@ -19,11 +19,22 @@ npm run dev
 - `INGEST_SUPABASE` = `true` to enable Supabase writes (optional)
 - `SUPABASE_URL` / `SUPABASE_ANON_KEY`
 - `SUPABASE_BUCKET_FILES` (default: `files`)
+- `FF_JOBS_WORKER` / `FF_COST_TELEMETRY` / `FF_EVALS` / `FF_MAP_PIPELINE` / `FF_SOCIAL_PIPELINE`
+- `USE_MOCKS=true` for fully mocked dashboards (pairs with `NEXT_PUBLIC_DEMO_KEY=demo-key`)
 
 ## Notes
 - Uses `unzipit` to unpack the worker ZIP in-memory.
 - If Supabase is **disabled**, the route returns a JSON summary (filenames, bytes).
 - Front‑matter insertion/merge is left as a TODO (depends on your markdown policy).
+
+## Feature Surfaces
+
+- `/metrics` — provider cost + latency dashboards (guarded by `FF_COST_TELEMETRY`).
+- `/evals` — Eval Lab leaderboard + run console (`FF_EVALS`).
+- `/policy` — Ethics Council decisions + Shadow Self summaries (`FF_MAP_PIPELINE` or `FF_SOCIAL_PIPELINE`).
+- `/play/map` + `/play/social` — pipelines for map tiles + social render queues.
+- `/publish` — MCP staging + approvals.
+- `/mvp` — build briefs + job dispatch.
 
 ## Clean Intent
 Log provenance (`manifest.json`) with extractor list and converted_at; keep auditability.
