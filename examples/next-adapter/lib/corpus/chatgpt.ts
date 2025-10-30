@@ -42,9 +42,7 @@ export async function processChatExportFromPath(filePath: string) {
         if (!node || !node.message) continue;
         const m = node.message;
         const parts = Array.isArray(m?.content?.parts) ? m.content.parts.filter((p: any) => typeof p === 'string') : [];
-        const text = parts.join('
-
-');
+        const text = parts.join('\n');
         const id = m.id || key;
         msgBatch.push({ id, conversation_id: convId, author: (m.author && (m.author.name || m.author.role)) || null, role: (m.author && m.author.role) || null, model: m.metadata?.model_slug || m.metadata?.model || null, created_at: m.create_time ? new Date(m.create_time * 1000).toISOString() : null, text, meta: m.metadata || {} });
         msgCount++;
