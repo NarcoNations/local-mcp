@@ -18,22 +18,23 @@ export async function POST(req: NextRequest) {
     const mdConvertUrl = process.env.MD_CONVERT_URL;
     if (!mdConvertUrl) return new Response('MD_CONVERT_URL not set', { status: 500 });
 
-    const { zipBytes, files } = await convertWithMd(file);
+    const { zipBytes, manifest } = await convertWithMd(file);
     const slug = makeSlug(file.name);
+    const manifestData = manifest(slug, file.name);
 
     let storage = null;
     if ((process.env.INGEST_SUPABASE || '').toLowerCase() === 'true') {
-      storage = await writeToSupabase(slug, zipBytes, files);
+      storage = await writeToSupabase(slug, zipBytes, manifestData);
     }
 
     await logEvent({
       source: 'ingest',
       kind: 'ingest.convert',
       title: `Converted ${file.name}`,
-      meta: { slug, count: files.length }
+      meta: { slug, count: manifestData.files.length }
     });
 
-    return Response.json({ ok: true, slug, files, storage });
+    return Response.json({ ok: true, slug, files: manifestData.files, storage });
   } catch (e: any) {
     await logEvent({ source: 'ingest', kind: 'error', title: 'convert failed', body: e?.message });
     return new Response('Error: ' + (e?.message || 'unknown'), { status: 500 });
