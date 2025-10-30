@@ -1,19 +1,17 @@
-# 20 — MVP_GENERATOR
+# 20 — One‑Shot MVP Generator
 
-Input: natural language → build spec + scaffold.
+**TL;DR**  \
+Natural language → build spec: ARCHITECTURE.md, ROUTES.md, DATA_MODEL.md, APIs + tests, component scaffolds, PR stub.
 
-Outputs
-- ARCHITECTURE.md, ROUTES.md, DATA_MODEL.md
-- API endpoints + tests
-- Component scaffold + PR stub
+## Inputs
+- Brief text, optional Whiteboard export JSON, target stack (Next 14/TS/TW).
 
-Command
-- vibe mvp "AI crime map with smuggling nodes and filters"
-- Option: Codex hand-off mode
+## Outputs
+- `/docs` pack; `/app` route stubs; `/lib` utils; `/api` handlers; basic tests.
+- Git branch & PR template prefilled.
 
-Acceptance Criteria
-- Generates branch, commit, and PR with summary
-- Respects theme tokens, Next.js 14, TS, Tailwind
-- Includes minimal Playwright sanity tests
+## API
+- `POST /api/mvp/generate` → returns artifact ZIP + branch name.
 
-Edit here: define allowed templates in /templates/mvp/*.json
+## Acceptance
+- Builds on Vercel; passes lint + a11y smokes; uses tokens (no hardcoded hex).

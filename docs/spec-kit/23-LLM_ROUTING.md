@@ -1,21 +1,17 @@
-# 23 — LLM_ROUTING
+# 23 — LLM Routing (Local ↔ Cloud)
 
-Routing matrix for local + cloud models.
+**TL;DR**  \
+Policy‑driven model selection by task sensitivity, cost, latency, and quality.
 
-Models
-- Local: gguf (llama, qwen, mistral) via llama.cpp/ollama
-- Cloud: OpenAI GPT-5, Perplexity, Anthropic, etc.
+## Policy
+- YAML/TS map: task → preferred models; cost caps; fallbacks; cooldowns.
+- Sensitive tasks → local only (no uploads).
 
-Policy
-- Classify request → latency/safety/quality band → pick route
-- Fall back if provider quota/exceeded
-- Log: prompt_id, model, temp, seed, tokens, latency
+## Telemetry
+- Log latency, cost estimate, errors, win‑rate by model.
 
-Config
-- `/config/llm-routing.json` with rules + allowlist
+## API
+- `POST /api/llm/route` → `{ task, prompt, vars }` → chosen model + output
 
-Acceptance Criteria
-- Each run records route decision + rationale
-- Kill-switch for external calls; local-only mode
-
-Edit here: add your device caps + API keys (env) for routing decisions.
+## Acceptance
+- Reproducible selection; budget respected; red-team gate for risky tasks.

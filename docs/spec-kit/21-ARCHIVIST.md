@@ -1,20 +1,18 @@
-# 21 — ARCHIVIST (Files + Knowledge)
+# 21 — Archivist & File Manager
 
-Sources
-- Obsidian, Supabase Storage, Local vault, Git repos, Uploads, Whiteboard, Showroom
+**TL;DR**  \
+Normalize, tag, embed, and back up assets from Obsidian, Supabase, repos, uploads, whiteboard snaps, and Showroom outputs.
 
-Functions
-- Tag · Chunk · Embed · Backup · Rename/Normalize · Smart linking (wiki refs)
+## Functions
+- Tagging, chunking, embedding, backup, rename/normalize, smart linking (wiki refs).
 
-Tables
-- `files`, `assets`, `embeddings`, `links`
+## Sources
+- Obsidian vault, Supabase Storage, Git repos, local uploads, Whiteboard exports.
 
-Jobs
-- Ingest → Normalize → Index → Verify → Publish
+## APIs
+- `POST /api/archive/ingest` (file or URL)
+- `POST /api/archive/tag`
+- `POST /api/archive/embed`
 
-Acceptance Criteria
-- All ingested items get stable IDs and backlinks
-- Incremental re-indexing with checksum dedupe
-- Restore-from-archive path verified quarterly
-
-Edit here: add your actual Obsidian and Supabase buckets in CONFIG.
+## Acceptance
+- Provenance retained; idempotent re‑runs; Historian logs every action.

@@ -1,15 +1,16 @@
-# 22 — MULTIFORMAT_OUTPUT
+# 22 — Multi‑Format Output Transformer
 
-Transform any input → target formats:
-- Copy deck, Exec brief, Tweet thread, Blog, Datasheet, Tech spec, PRD, Notion/Obsidian page, Code comments, Markdown doc pack
+**TL;DR**  \
+Any input → Copy deck / Exec brief / Tweet thread / Blog / Datasheet / PRD / Notion / Obsidian / Code comments / MD doc pack.
 
-API
-- POST /api/transform
-- POST /api/transform/batch
+## Inputs
+- Source text + target format + style (Narco Noir or VibeLabz Clean).
 
-Acceptance Criteria
-- Deterministic templates, token budgets, and safe markdown
-- Theme-aware (Narco Noir × VibeLabz Clean)
-- A11y checks for docs (headings, alt, contrast)
+## Outputs
+- Markdown + structured JSON (frontmatter) per format.
 
-Edit here: add template .mdx files under /templates/transform/*.mdx
+## API
+- `POST /api/transform` → `{ input, target, style, options }`
+
+## Acceptance
+- Deterministic templates; tokens only; cites where required.
