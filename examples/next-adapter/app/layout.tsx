@@ -1,24 +1,27 @@
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+import type { Metadata } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
+import type { ReactNode } from "react";
+
+import { AppProviders } from "@/components/providers/AppProviders";
+import { AppShell } from "@/components/shell/AppShell";
+
+import "./globals.css";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains" });
+
+export const metadata: Metadata = {
+  title: "VibeOS Ultimate Dashboard",
+  description: "Narco Nations · Adaptive OS control center",
+};
+
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <body>
-        <header style={{ padding: '12px 16px', borderBottom: '1px solid #eee', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <strong>VibeOS Adapter</strong>
-          <nav style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <a href="/">Home</a>
-            <a href="/timeline">Historian</a>
-            <a href="/workroom">Workroom</a>
-            <a href="/mvp">One‑Shot MVP</a>
-            <a href="/library/prompts">Prompt Library</a>
-            <a href="/research">Research Engine</a>
-            <a href="/play/map">Map Playground</a>
-            <a href="/play/social">Social Playground</a>
-            <a href="/knowledge">Knowledge</a>
-            <a href="/search">Search</a>
-            <a href="/api-manager">API Manager</a>
-          </nav>
-        </header>
-        <div style={{ maxWidth: 960, margin: '0 auto' }}>{children}</div>
+    <html lang="en" className="theme-dark" suppressHydrationWarning>
+      <body className={`${inter.variable} ${jetbrains.variable} bg-background text-foreground antialiased`}>
+        <AppProviders>
+          <AppShell>{children}</AppShell>
+        </AppProviders>
       </body>
     </html>
   );
