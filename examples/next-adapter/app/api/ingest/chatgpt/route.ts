@@ -1,14 +1,24 @@
 export const runtime = 'nodejs';
 import { NextRequest } from 'next/server';
+import { logEvent } from '@/examples/next-adapter/lib/historian';
+import { processChatExportFromUrl } from '@/examples/next-adapter/lib/corpus/chatgpt';
 
-// Skeleton for streaming a ChatGPT export URL into DB via background job.
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    if (!body?.fileUrl) return new Response('fileUrl required', { status: 400 });
-    // TODO: dispatch background job (n8n/task) with fileUrl to process via stream-json.
-    return Response.json({ ok: true, note: 'chatgpt ingest scaffold', received: body.fileUrl });
+    const { fileUrl } = await req.json();
+    if (!fileUrl) return new Response('fileUrl required', { status: 400 });
+    const result = await processChatExportFromUrl(fileUrl);
+
+    await logEvent({
+      source: 'ingest',
+      kind: 'ingest.chatgpt',
+      title: 'ChatGPT export ingested',
+      meta: { ...result, fileUrl }
+    });
+
+    return Response.json({ ok: true, ...result });
   } catch (e: any) {
-    return new Response('Error: ' + e.message, { status: 500 });
+    await logEvent({ source: 'ingest', kind: 'error', title: 'chatgpt ingest failed', body: e?.message });
+    return new Response('Error: ' + (e?.message || 'unknown'), { status: 500 });
   }
 }
