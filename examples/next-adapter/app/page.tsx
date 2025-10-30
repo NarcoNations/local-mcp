@@ -13,6 +13,10 @@ export default function Page() {
         <li>Social Playground → <a href="/play/social">/play/social</a></li>
         <li>API Manager → <a href="/api-manager">/api-manager</a></li>
         <li>Knowledge & Search → <a href="/knowledge">/knowledge</a>, <a href="/search">/search</a></li>
+        <li>Metrics & Health → <a href="/metrics">/metrics</a></li>
+        <li>Eval Lab → <a href="/evals">/evals</a></li>
+        <li>Ethics Council → <a href="/policy">/policy</a></li>
+        <li>Publishing Queue → <a href="/publish">/publish</a></li>
       </ul>
     </main>
   );
