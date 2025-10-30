@@ -13,7 +13,7 @@ export async function upsertKnowledge(
   supabase: ReturnType<typeof createClient>,
   row: KnowledgeRow
 ) {
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('knowledge')
     .upsert(row, { onConflict: 'slug' });
   if (error) throw error;

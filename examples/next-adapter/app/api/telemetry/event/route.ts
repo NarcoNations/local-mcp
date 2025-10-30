@@ -1,6 +1,7 @@
 export const runtime = 'nodejs';
 
 import { createClient } from '@supabase/supabase-js';
+import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 
 const TelemetryBody = z.object({
@@ -19,7 +20,7 @@ function getSupabaseAdmin() {
   return createClient(url, key, { auth: { persistSession: false } });
 }
 
-function bearerOk(req) {
+function bearerOk(req: NextRequest) {
   const token = process.env.TELEMETRY_BEARER_TOKEN;
   if (!token) return true;
   const auth = req.headers.get('authorization') || '';
@@ -27,16 +28,21 @@ function bearerOk(req) {
   return Boolean(m && m[1] === token);
 }
 
-async function ensureChannelId(supabase, key) {
+async function ensureChannelId(supabase: any, key?: string | null) {
   if (!key) return null;
   const { data: found } = await supabase.from('channels').select('id').eq('key', key).maybeSingle();
-  if (found?.id) return found.id;
-  const { data, error } = await supabase.from('channels').insert({ key, label: key }).select('id').maybeSingle();
+  const existingId = (found as { id?: string } | null)?.id;
+  if (existingId) return existingId;
+  const { data, error } = await supabase
+    .from('channels')
+    .insert({ key, label: key })
+    .select('id')
+    .maybeSingle();
   if (error) throw error;
-  return data?.id || null;
+  return (data as { id?: string } | null)?.id || null;
 }
 
-export async function POST(req) {
+export async function POST(req: NextRequest) {
   try {
     if (!bearerOk(req)) return new Response('Unauthorized', { status: 401 });
 
@@ -63,7 +69,8 @@ export async function POST(req) {
     if (error) return new Response('DB error: ' + error.message, { status: 500 });
 
     return Response.json({ ok: true });
-  } catch (err) {
-    return new Response('Error: ' + (err?.message || String(err)), { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return new Response('Error: ' + message, { status: 500 });
   }
 }
