@@ -1,6 +1,8 @@
 import crypto from 'node:crypto';
 import { unzip } from 'unzipit';
-import { sbServer } from '@/examples/next-adapter/lib/supabase/server';
+import { sbServer } from '@/lib/supabase/server';
+
+const seenHashes = new Set<string>();
 
 function safeBaseName(name: string) {
   const dot = name.lastIndexOf('.');
@@ -38,6 +40,14 @@ export async function convertWithMd(file: File) {
     files.push({ path: key, size: entry.size || 0 });
   }
   return { zipBytes: buf, files, sha256: sha256(buf) };
+}
+
+export function wasProcessed(hash: string) {
+  return seenHashes.has(hash);
+}
+
+export function rememberHash(hash: string) {
+  seenHashes.add(hash);
 }
 
 export async function writeToSupabase(slug: string, zipBytes: ArrayBuffer, files: { path: string; size: number }[]) {

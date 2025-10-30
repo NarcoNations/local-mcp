@@ -1,4 +1,7 @@
-import { sbServer } from '@/examples/next-adapter/lib/supabase/server';
+import Link from 'next/link';
+import { sbServer } from '@/lib/supabase/server';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 export default async function TimelinePage() {
   const sb = sbServer();

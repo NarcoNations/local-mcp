@@ -7,6 +7,11 @@
     "jsx": "preserve",
     "strict": true,
     "types": ["node"],
-    "noEmit": true
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@vibelabz/api-manager": ["../../packages/api-manager/src/index.ts"]
+    }
   }
 }
