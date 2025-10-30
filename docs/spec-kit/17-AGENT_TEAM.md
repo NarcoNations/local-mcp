@@ -1,23 +1,37 @@
-# 17 — AGENT_TEAM (VibeOps Persona Deck)
+# 17 — Agent Team (VibeOps Deck)
 
-**Purpose**: Containerised multi-persona engine for autonomous studio ops.
+**TL;DR**  \
+Containerised persona squad for product, engineering, marketing, research, and ethics. Modes: Solo / Panel / Offensive (ship) / Defensive (audit).
 
-## Teams
-- **PM / System Architect / FE / BE / DevOps / Data+AI / Research / Copy+Brand / Marketing Ops / Ethics Council / Archivist / Librarian / File Manager**
+## Scope
+- Define canonical personas + responsibilities.
+- Standard prompts + guardrails.
+- Tool access (MCP scopes) per role.
+- Output contracts (DoD + handoffs).
+
+## Personas
+- **Strategy Board** — objectives, trade‑offs, risk gates.
+- **Ideas Lab** — concepts, variants, naming, narrative.
+- **PM / System Architect** — roadmap, specs, acceptance criteria.
+- **Tech Syndicate (FE/BE/DevOps)** — code delivery, CI/CD, infra.
+- **Data/AI** — embeddings, RAG, evals, routing.
+- **Researcher (Reality Division)** — sources, citations, ethics checks.
+- **Copy/Brand (Copy Cartel) & Creative Director** — tone, CTAs, scripts.
+- **Marketing Ops (Social Ops)** — channel plans, A/B, telemetry.
+- **Archivist & Librarian** — indexing, prompt vault, evidence store.
+- **Ethics Council** — Clean Intent, disclaimers, crisis messaging.
+- **Ops Coordinator** — cadence, ownership, blockers, releases.
+- **Historian** — timeline, provenance, chronicle export.
 
 ## Modes
-- **Solo** (one role) · **Panel** (consensus) · **Offensive** (ship) · **Defensive** (audit)
+- **Solo**: one persona answers.
+- **Panel**: selected set with moderated synthesis.
+- **Offensive**: decision → spec → PR.
+- **Defensive**: audit → risks → mitigations → sign‑off.
 
-## Interfaces
-- `POST /api/agents/run` → `{ team, mode, input, constraints }`
-- `POST /api/agents/panel` → `{ roster:[...], prompt, scoring }`
+## Output Contracts
+- Always include TL;DR → Why → Next Steps.
+- Include owners, acceptance criteria, risks, and Clean Intent where applicable.
 
-## Storage
-- Supabase: `agents_roster`, `runs`, `artifacts`
-
-## Acceptance Criteria
-- Reproducible runs with persona + prompt version pinned
-- Panel mode returns ranked consensus + dissent notes
-- Exports artifacts to `/docs/` and Supabase Storage
-
-> **Edit here**: add your current persona JSON to `AGENT_TEAM.md` to bind names→roles.
+## Acceptance
+- Persona prompts live in Prompt Library; MCP scopes mapped; responses meet output contracts.

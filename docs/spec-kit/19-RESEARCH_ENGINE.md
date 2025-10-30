@@ -1,22 +1,19 @@
-# 19 — RESEARCH_ENGINE
+# 19 — Research Engine
 
-Goal: Query → Plan → Structured notes with facts/insights/sources separation.
+**TL;DR**  \
+Turn a topic into a battle‑ready brief: plan → notes → facts/insights/sources → exports (Obsidian, DOCS, Supabase).
 
-Pipeline
-1) Intent parsing → research plan
-2) Crawl/fetch (respect robots)
-3) Chunk + embed (Xenova)
-4) Synthesis: Facts vs Insights vs Open Questions
-5) Export: Obsidian, DOCS/, Supabase knowledge, Markdown dossier
+## Flow
+1) Input query + objectives + constraints.
+2) Generate plan (questions, sources, evaluation).
+3) Collect notes with **clear source URLs**.
+4) Separate **Facts / Insights / Sources**.
+5) Export → Dossier MD, Supabase `knowledge`, Obsidian.
 
-API
-- POST /api/research/plan
-- POST /api/research/run
-- POST /api/research/export
+## API
+- `POST /api/research/plan` → outline
+- `POST /api/research/run` → BRIEF.md with sections
+- `POST /api/research/export` → destinations
 
-Acceptance Criteria
-- Each claim carries source + date
-- Toggle: Academic vs Narrative mode
-- Outputs deterministic with seeded LLM calls
-
-Edit here: add topic-specific templates in /prompts/research/*.md
+## Acceptance
+- All claims cite; academic vs narrative modes toggle; Clean Intent enforced.
