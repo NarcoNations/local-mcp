@@ -2,3 +2,5 @@ node_modules
 dist
 .mcp-nn
 .DS_Store
+examples/next-adapter/.next
+examples/next-adapter/tsconfig.tsbuildinfo

@@ -1,78 +1,101 @@
 import fs from 'node:fs';
-import path from 'node:path';
-import os from 'node:os';
+import { Readable } from 'node:stream';
 import { chain } from 'stream-chain';
 import { parser } from 'stream-json';
 import { streamArray } from 'stream-json/streamers/StreamArray';
-import { sbServer } from '@/examples/next-adapter/lib/supabase/server';
+import { sbServer } from '../supabase/server';
 
-export async function processChatExportFromUrl(fileUrl: string) {
-  const tmp = path.join(os.tmpdir(), 'chat-export-' + Date.now() + '.json');
+export type ChatIngestResult = { conversations: number; messages: number };
+
+export async function processChatExportFromUrl(fileUrl: string): Promise<ChatIngestResult> {
   const res = await fetch(fileUrl);
   if (!res.ok) throw new Error('download failed: ' + res.status);
-  const buf = Buffer.from(await res.arrayBuffer());
-  await fs.promises.writeFile(tmp, buf);
-  const r = await processChatExportFromPath(tmp);
-  try { await fs.promises.unlink(tmp); } catch {}
-  return r;
+  if (!res.body) throw new Error('download missing body');
+  const nodeStream = Readable.fromWeb(res.body as any);
+  return processChatExportFromStream(nodeStream);
 }
 
-export async function processChatExportFromPath(filePath: string) {
+export async function processChatExportFromPath(filePath: string): Promise<ChatIngestResult> {
+  return processChatExportFromStream(fs.createReadStream(filePath));
+}
+
+export async function processChatExportFromStream(stream: NodeJS.ReadableStream): Promise<ChatIngestResult> {
   const sb = sbServer();
   let convCount = 0;
   let msgCount = 0;
   const convBatch: any[] = [];
   const msgBatch: any[] = [];
 
-  await new Promise<void>((resolve, reject) => {
-    const pipeline: any = chain([
-      fs.createReadStream(filePath),
-      parser(),
-      streamArray()
-    ]);
+  async function flush() {
+    if (convBatch.length) {
+      await sb.from('conversations').upsert(convBatch.splice(0, convBatch.length), { onConflict: 'id' });
+    }
+    if (msgBatch.length) {
+      await sb.from('messages').upsert(msgBatch.splice(0, msgBatch.length), { onConflict: 'id' });
+    }
+  }
 
-    pipeline.on('data', async (data: any) => {
-      const conv = data.value;
-      const convId = conv.id || conv.conversation_id || 'conv-' + Date.now() + '-' + Math.random().toString(36).slice(2);
-      convBatch.push({ id: convId, title: conv.title || null, created_at: conv.create_time ? new Date(conv.create_time).toISOString() : null, updated_at: conv.update_time ? new Date(conv.update_time).toISOString() : null, source: 'chatgpt_export', meta: conv.metadata || {} });
-      convCount++;
-      const mapping = conv.mapping || {};
-      for (const key of Object.keys(mapping)) {
-        const node = mapping[key];
-        if (!node || !node.message) continue;
-        const m = node.message;
-        const parts = Array.isArray(m?.content?.parts) ? m.content.parts.filter((p: any) => typeof p === 'string') : [];
-        const text = parts.join('
+  const pipeline: any = chain([stream, parser(), streamArray()]);
 
-');
-        const id = m.id || key;
-        msgBatch.push({ id, conversation_id: convId, author: (m.author && (m.author.name || m.author.role)) || null, role: (m.author && m.author.role) || null, model: m.metadata?.model_slug || m.metadata?.model || null, created_at: m.create_time ? new Date(m.create_time * 1000).toISOString() : null, text, meta: m.metadata || {} });
-        msgCount++;
-      }
-
-      if (convBatch.length >= 200) {
-        // flush in chunks
-        await sb.from('conversations').upsert(convBatch, { onConflict: 'id' });
-        convBatch.length = 0;
-      }
-      if (msgBatch.length >= 500) {
-        await sb.from('messages').upsert(msgBatch, { onConflict: 'id' });
-        msgBatch.length = 0;
-      }
+  for await (const data of pipeline) {
+    const conv = data?.value || {};
+    const convId = conv.id || conv.conversation_id || `conv-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    convBatch.push({
+      id: convId,
+      title: conv.title || null,
+      created_at: toIso(conv.create_time),
+      updated_at: toIso(conv.update_time),
+      source: 'chatgpt_export',
+      meta: conv.metadata || {}
     });
+    convCount++;
 
-    pipeline.on('end', async () => {
-      try {
-        if (convBatch.length) await sb.from('conversations').upsert(convBatch, { onConflict: 'id' });
-        if (msgBatch.length) await sb.from('messages').upsert(msgBatch, { onConflict: 'id' });
-        resolve();
-      } catch (e) {
-        reject(e);
-      }
-    });
+    const mapping = conv.mapping || {};
+    for (const key of Object.keys(mapping)) {
+      const node = mapping[key];
+      if (!node || !node.message) continue;
+      const message = node.message;
+      const parts = Array.isArray(message?.content?.parts)
+        ? message.content.parts.filter((p: any) => typeof p === 'string')
+        : [];
+      const text = parts.join('\n\n');
+      const id = message.id || key;
+      msgBatch.push({
+        id,
+        conversation_id: convId,
+        author: (message.author && (message.author.name || message.author.role)) || null,
+        role: (message.author && message.author.role) || null,
+        model: message.metadata?.model_slug || message.metadata?.model || null,
+        created_at: toIso(message.create_time),
+        text,
+        meta: message.metadata || {}
+      });
+      msgCount++;
+    }
 
-    pipeline.on('error', (e: any) => reject(e));
-  });
+    if (convBatch.length >= 200) await flush();
+    if (msgBatch.length >= 500) await flush();
+  }
 
+  await flush();
   return { conversations: convCount, messages: msgCount };
+}
+
+function toIso(value: any) {
+  if (value === null || value === undefined || value === '') return null;
+  try {
+    if (typeof value === 'number') {
+      const ms = value > 1e12 ? value : value * 1000;
+      return new Date(ms).toISOString();
+    }
+    if (typeof value === 'string' && value.trim() !== '') {
+      const asNum = Number(value);
+      if (!Number.isNaN(asNum) && value.length <= 12) {
+        const ms = asNum > 1e12 ? asNum : asNum * 1000;
+        return new Date(ms).toISOString();
+      }
+      return new Date(value).toISOString();
+    }
+  } catch {}
+  return null;
 }

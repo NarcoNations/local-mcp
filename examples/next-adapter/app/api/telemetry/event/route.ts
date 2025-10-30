@@ -1,6 +1,8 @@
 export const runtime = 'nodejs';
 
+import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
 const TelemetryBody = z.object({
@@ -9,17 +11,19 @@ const TelemetryBody = z.object({
   event_type: z.enum(['impression','click','view','like','share','comment','signup','purchase']),
   occurred_at: z.string().datetime().optional(),
   value: z.number().optional(),
-  meta: z.record(z.any()).optional(),
+  meta: z.record(z.any()).optional()
 });
 
-function getSupabaseAdmin() {
+type SupabaseAdmin = SupabaseClient<any, 'public', any>;
+
+function getSupabaseAdmin(): SupabaseAdmin {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
   if (!url || !key) throw new Error('Missing Supabase env');
   return createClient(url, key, { auth: { persistSession: false } });
 }
 
-function bearerOk(req) {
+function bearerOk(req: NextRequest) {
   const token = process.env.TELEMETRY_BEARER_TOKEN;
   if (!token) return true;
   const auth = req.headers.get('authorization') || '';
@@ -27,7 +31,7 @@ function bearerOk(req) {
   return Boolean(m && m[1] === token);
 }
 
-async function ensureChannelId(supabase, key) {
+async function ensureChannelId(supabase: SupabaseAdmin, key?: string | null) {
   if (!key) return null;
   const { data: found } = await supabase.from('channels').select('id').eq('key', key).maybeSingle();
   if (found?.id) return found.id;
@@ -36,7 +40,7 @@ async function ensureChannelId(supabase, key) {
   return data?.id || null;
 }
 
-export async function POST(req) {
+export async function POST(req: NextRequest) {
   try {
     if (!bearerOk(req)) return new Response('Unauthorized', { status: 401 });
 
@@ -59,11 +63,12 @@ export async function POST(req) {
       meta: body.meta ?? {},
     };
 
-    const { error } = await supabase.from('campaign_events').insert(row);
+    const { error } = await supabase.from('campaign_events').insert(row as any);
     if (error) return new Response('DB error: ' + error.message, { status: 500 });
 
     return Response.json({ ok: true });
   } catch (err) {
-    return new Response('Error: ' + (err?.message || String(err)), { status: 500 });
+    const message = err instanceof Error ? err.message : String(err);
+    return new Response('Error: ' + message, { status: 500 });
   }
 }

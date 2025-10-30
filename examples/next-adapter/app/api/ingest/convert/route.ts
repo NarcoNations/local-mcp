@@ -1,7 +1,12 @@
 export const runtime = 'nodejs';
 import { NextRequest } from 'next/server';
 import { logEvent } from '@/examples/next-adapter/lib/historian';
-import { convertWithMd, writeToSupabase, makeSlug } from '@/examples/next-adapter/lib/ingest/convert';
+import {
+  convertWithMd,
+  writeToSupabase,
+  makeSlug,
+  buildManifest
+} from '@/examples/next-adapter/lib/ingest/convert';
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,12 +23,13 @@ export async function POST(req: NextRequest) {
     const mdConvertUrl = process.env.MD_CONVERT_URL;
     if (!mdConvertUrl) return new Response('MD_CONVERT_URL not set', { status: 500 });
 
-    const { zipBytes, files } = await convertWithMd(file);
     const slug = makeSlug(file.name);
+    const { zipBytes, files, sha256 } = await convertWithMd(file);
+    const manifest = buildManifest(slug, file.name, files, sha256);
 
-    let storage = null;
+    let storage: any = null;
     if ((process.env.INGEST_SUPABASE || '').toLowerCase() === 'true') {
-      storage = await writeToSupabase(slug, zipBytes, files);
+      storage = await writeToSupabase(slug, manifest, zipBytes);
     }
 
     await logEvent({
@@ -33,7 +39,7 @@ export async function POST(req: NextRequest) {
       meta: { slug, count: files.length }
     });
 
-    return Response.json({ ok: true, slug, files, storage });
+    return Response.json({ ok: true, slug, files, manifest, storage });
   } catch (e: any) {
     await logEvent({ source: 'ingest', kind: 'error', title: 'convert failed', body: e?.message });
     return new Response('Error: ' + (e?.message || 'unknown'), { status: 500 });

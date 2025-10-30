@@ -1,5 +1,4 @@
 import matter from 'gray-matter';
-import YAML from 'yaml';
 
 /**
  * Merges a front‑matter patch into an existing Markdown string.

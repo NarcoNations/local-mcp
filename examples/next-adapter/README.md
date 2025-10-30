@@ -1,29 +1,85 @@
-# Next.js Adapter (Example) — `/app/api/ingest/convert`
+# VibeOS Adapter — Next.js 14 Sandbox
 
-This example shows a minimal **Next.js 14** API route that proxies an upload to the **md-convert** worker, unzips the result, and (optionally) writes files to **Supabase Storage**.
+This example app wires the core VibeOS flow — ingest → knowledge → embeddings → search — into a standalone Next.js 14 project.
+It is safe to run locally without touching the main repo.
 
-> It lives in `examples/next-adapter/` so it **won’t affect your main build**. Run it standalone if you want to test end-to-end.
-
-## Quick start
+## Adapter Quickstart
 
 ```bash
 cd examples/next-adapter
-pm i
-cp .env.example .env.local  # set MD_CONVERT_URL and Supabase vars if using storage
+npm install
+cp .env.example .env.local
 npm run dev
-# POST a file to http://localhost:3000/api/ingest/convert
 ```
 
-## Env
-- `MD_CONVERT_URL` (e.g. `http://localhost:8000`)
-- `INGEST_SUPABASE` = `true` to enable Supabase writes (optional)
-- `SUPABASE_URL` / `SUPABASE_ANON_KEY`
-- `SUPABASE_BUCKET_FILES` (default: `files`)
+Visit [http://localhost:3000](http://localhost:3000) for the UI surfaces.
 
-## Notes
-- Uses `unzipit` to unpack the worker ZIP in-memory.
-- If Supabase is **disabled**, the route returns a JSON summary (filenames, bytes).
-- Front‑matter insertion/merge is left as a TODO (depends on your markdown policy).
+## Environment
 
-## Clean Intent
-Log provenance (`manifest.json`) with extractor list and converted_at; keep auditability.
+| Variable | Description |
+| --- | --- |
+| `MD_CONVERT_URL` | md-convert worker base URL (default `http://localhost:8000`). |
+| `INGEST_SUPABASE` | Set to `true` to enable Supabase storage + table writes. |
+| `SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_KEY` | Required when Supabase features are enabled. |
+| `SUPABASE_BUCKET_FILES` | Bucket for archives/manifests (default `files`). |
+| `ALPHA_VANTAGE_KEY` | Optional — enables live Alpha Vantage feed queries. |
+| `OPENAI_API_KEY` | Optional — LLM router falls back to mock output when unset. |
+
+## Database setup
+
+Apply Supabase migrations (0001 → 0007) before running the adapter against a fresh database:
+
+```bash
+supabase db reset --local # or apply sequentially: 0001_*.sql ... 0007_chat_corpus.sql
+```
+
+The knowledge, embeddings, corpus, and historian tables are defined under `supabase/schema/` in the root repo.
+
+## Smoke APIs
+
+```
+# Upload a document (requires md-convert worker)
+curl -F "file=@fixtures/sample.pdf" http://localhost:3000/api/ingest/convert
+
+# Stream a ChatGPT conversations export
+curl -X POST http://localhost:3000/api/ingest/chatgpt \
+     -H 'Content-Type: application/json' \
+     -d '{"fileUrl":"https://example.com/conversations.json"}'
+
+# Trigger embeddings for a knowledge slug
+curl -X POST http://localhost:3000/api/knowledge/index \
+     -H 'Content-Type: application/json' \
+     -d '{"slug":"demo"}'
+
+# Run semantic search
+curl -X POST http://localhost:3000/api/search \
+     -H 'Content-Type: application/json' \
+     -d '{"q":"vibe"}'
+```
+
+## Scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the adapter locally. |
+| `npm run test` | Run Vitest API smoke tests (routes mocked for offline mode). |
+| `npm run typecheck` | Type-check the project. |
+| `npm run lint` | Next.js lint (optional if you have ESLint configured). |
+
+## UI Surfaces
+
+The App Router exposes:
+
+- `/ingest` — upload docs → md-convert manifest.
+- `/corpus` — ChatGPT export ingestion.
+- `/knowledge` — archive list + “Index” button.
+- `/search` — cosine similarity search results.
+- `/timeline` — historian filters + pagination.
+- `/api-manager` — Alpha Vantage + LLM router probes.
+- `/workroom` — lane-based sticky board with JSON export.
+- `/mvp` — One-Shot MVP ZIP generator stub.
+- `/library/prompts` — prompt catalog with “Test” hook.
+- `/research` — structured research stub (Facts/Insights/Sources).
+- `/play/map` & `/play/social` — playground placeholders for upcoming canvases.
+
+Use this adapter as the integration sandbox before promoting features to the primary VibeOS deployment.
