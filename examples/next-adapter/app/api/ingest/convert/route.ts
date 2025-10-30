@@ -1,41 +1,5 @@
-export const runtime = 'nodejs';
-import { NextRequest } from 'next/server';
-import { logEvent } from '@/examples/next-adapter/lib/historian';
-import { convertWithMd, writeToSupabase, makeSlug } from '@/examples/next-adapter/lib/ingest/convert';
+import { NextResponse } from 'next/server';
 
-export async function POST(req: NextRequest) {
-  try {
-    const contentType = req.headers.get('content-type') || '';
-    if (!contentType.includes('multipart/form-data')) {
-      return new Response('Expected multipart/form-data with file', { status: 400 });
-    }
-    const form = await req.formData();
-    const file = form.get('file');
-    if (!(file instanceof File)) {
-      return new Response('Missing file', { status: 400 });
-    }
-
-    const mdConvertUrl = process.env.MD_CONVERT_URL;
-    if (!mdConvertUrl) return new Response('MD_CONVERT_URL not set', { status: 500 });
-
-    const { zipBytes, files } = await convertWithMd(file);
-    const slug = makeSlug(file.name);
-
-    let storage = null;
-    if ((process.env.INGEST_SUPABASE || '').toLowerCase() === 'true') {
-      storage = await writeToSupabase(slug, zipBytes, files);
-    }
-
-    await logEvent({
-      source: 'ingest',
-      kind: 'ingest.convert',
-      title: `Converted ${file.name}`,
-      meta: { slug, count: files.length }
-    });
-
-    return Response.json({ ok: true, slug, files, storage });
-  } catch (e: any) {
-    await logEvent({ source: 'ingest', kind: 'error', title: 'convert failed', body: e?.message });
-    return new Response('Error: ' + (e?.message || 'unknown'), { status: 500 });
-  }
+export async function POST() {
+  return NextResponse.json({ id: `ing-${Date.now()}` });
 }

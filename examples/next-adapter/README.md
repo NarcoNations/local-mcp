@@ -1,29 +1,58 @@
-# Next.js Adapter (Example) — `/app/api/ingest/convert`
+# VibeOS Ultimate Dashboard — Next.js Adapter
 
-This example shows a minimal **Next.js 14** API route that proxies an upload to the **md-convert** worker, unzips the result, and (optionally) writes files to **Supabase Storage**.
+Cinematic VibeOS control center built with **Next.js 14**, **Tailwind CSS**, and **Framer Motion**. The adapter ships a responsive shell (sidebar + command bar), dashboard widgets, operational forms, and stubs for every major Narco Noir surface.
 
-> It lives in `examples/next-adapter/` so it **won’t affect your main build**. Run it standalone if you want to test end-to-end.
-
-## Quick start
+## Quickstart
 
 ```bash
 cd examples/next-adapter
-pm i
-cp .env.example .env.local  # set MD_CONVERT_URL and Supabase vars if using storage
+npm install
 npm run dev
-# POST a file to http://localhost:3000/api/ingest/convert
+# visit http://localhost:3000
 ```
 
-## Env
-- `MD_CONVERT_URL` (e.g. `http://localhost:8000`)
-- `INGEST_SUPABASE` = `true` to enable Supabase writes (optional)
-- `SUPABASE_URL` / `SUPABASE_ANON_KEY`
-- `SUPABASE_BUCKET_FILES` (default: `files`)
+Environment flags:
 
-## Notes
-- Uses `unzipit` to unpack the worker ZIP in-memory.
-- If Supabase is **disabled**, the route returns a JSON summary (filenames, bytes).
-- Front‑matter insertion/merge is left as a TODO (depends on your markdown policy).
+- `NEXT_PUBLIC_USE_MOCKS` — defaults to `true`; set to `false` to hit the provided API stubs.
+- `VERCEL_URL` / `NEXT_PUBLIC_APP_URL` — optional base URL override for server-side fetches.
 
-## Clean Intent
-Log provenance (`manifest.json`) with extractor list and converted_at; keep auditability.
+## Keyboard + Theme Controls
+
+| Shortcut | Action |
+| --- | --- |
+| `⌘ + K` / `Ctrl + K` | Open command palette |
+| `/` | Focus global search |
+| `t` | Toggle Narco Noir ↔ VibeLabz Clean theme |
+
+Theme preference persists in `localStorage` and applies via `<html class="theme-dark|theme-light">`.
+
+## Feature Surfaces
+
+- **Dashboard** — quick actions, Historian stream, ingest status, knowledge, search, API probes, workroom/MVP/Playground tiles.
+- **Ingest / Corpus / Knowledge / Search / Timeline / API Manager** — fully wired forms with loading + toast feedback and mock-aware data clients.
+- **Workroom** — draggable stickies lanes with JSON export.
+- **MVP** — textarea + `brief.json` upload feeding the MVP generator stub.
+- **Prompt Library** — browse/run prompts with placeholder linter hook.
+- **Research** — structured facts/insights/sources response.
+- **Playgrounds** — MapLibre placeholder + Social template enqueuer.
+
+All API routes live under `app/api/*` and return typed mock data so the UI never crashes while real services come online.
+
+## Testing
+
+```bash
+npm test
+```
+
+Vitest smoke tests ensure the dashboard renders core widgets and the command palette lists actions.
+
+## Screenshots
+
+Screenshots are generated under `public/_checks/`:
+
+- Desktop dashboard: `public/_checks/dashboard-desktop.png`
+- Mobile dashboard: `public/_checks/dashboard-mobile.png`
+- Desktop timeline: `public/_checks/timeline-desktop.png`
+- Mobile timeline: `public/_checks/timeline-mobile.png`
+
+Regenerate them after significant UI adjustments to keep documentation in sync.
