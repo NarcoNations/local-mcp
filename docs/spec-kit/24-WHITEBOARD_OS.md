@@ -1,18 +1,15 @@
-# 24 — WHITEBOARD_OS
+# 24 — Whiteboard OS (Workroom)
 
-Spatial command surface + memory.
+**TL;DR**  \
+Spatial command surface → sketch → export → One‑Shot MVP or Panel review.
 
-Concepts
-- Boards → Frames → Nodes (tasks, files, ideas, components)
-- Agent pairing: drag a node onto a persona to 'work it'
+## Features
+- Pan/zoom canvas, frames, lanes (SB/IL/PM/FE/BE/DevOps/Research/Copy/Ethics).
+- Stickies, text blocks, connectors; asset drops.
+- Export JSON brief → Spec‑Kit & MVP generator.
 
-Features
-- Live cursor and comments
-- Snapshots → commit to /docs/whiteboard/*
-- Link nodes to repo files and Supabase rows
+## A11y & Perf
+- Keyboard tool switching; focus rings; 16ms budget; reduced motion support.
 
-Acceptance Criteria
-- Each node has stable ID + backlink trail
-- Export board as JSON + PNG + Markdown summary
-
-Edit here: define node schemas in /schemas/whiteboard-node.json
+## Acceptance
+- Exports reproducible briefs; error‑proof; survives reload (autosave).
