@@ -15,25 +15,27 @@ export async function POST(req: NextRequest) {
       return new Response('Missing file', { status: 400 });
     }
 
-    const mdConvertUrl = process.env.MD_CONVERT_URL;
-    if (!mdConvertUrl) return new Response('MD_CONVERT_URL not set', { status: 500 });
-
-    const { zipBytes, files } = await convertWithMd(file);
     const slug = makeSlug(file.name);
+    const { zipBytes, manifest } = await convertWithMd(file, slug);
 
-    let storage = null;
+    let storage: {
+      bucket: string;
+      archivePath: string;
+      manifestPath: string;
+      knowledgeId: string;
+    } | null = null;
     if ((process.env.INGEST_SUPABASE || '').toLowerCase() === 'true') {
-      storage = await writeToSupabase(slug, zipBytes, files);
+      storage = await writeToSupabase({ slug, manifest, zipBytes });
     }
 
     await logEvent({
       source: 'ingest',
       kind: 'ingest.convert',
       title: `Converted ${file.name}`,
-      meta: { slug, count: files.length }
+      meta: { slug, count: manifest.files.length }
     });
 
-    return Response.json({ ok: true, slug, files, storage });
+    return Response.json({ ok: true, slug, files: manifest.files, storage });
   } catch (e: any) {
     await logEvent({ source: 'ingest', kind: 'error', title: 'convert failed', body: e?.message });
     return new Response('Error: ' + (e?.message || 'unknown'), { status: 500 });

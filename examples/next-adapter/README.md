@@ -1,29 +1,68 @@
-# Next.js Adapter (Example) — `/app/api/ingest/convert`
+# Next.js Adapter — VibeOS Core Surfaces
 
-This example shows a minimal **Next.js 14** API route that proxies an upload to the **md-convert** worker, unzips the result, and (optionally) writes files to **Supabase Storage**.
+This example app powers ingest → embeddings → search plus Historian, API Manager, Workroom, Prompt Library, and playgrounds. It lives in `examples/next-adapter/` so you can run it independently from the main monorepo.
 
-> It lives in `examples/next-adapter/` so it **won’t affect your main build**. Run it standalone if you want to test end-to-end.
-
-## Quick start
+## Adapter Quickstart
 
 ```bash
 cd examples/next-adapter
-pm i
-cp .env.example .env.local  # set MD_CONVERT_URL and Supabase vars if using storage
+npm install
+cp .env.example .env.local  # set MD_CONVERT_URL / Supabase / AlphaVantage keys as needed
 npm run dev
-# POST a file to http://localhost:3000/api/ingest/convert
 ```
 
-## Env
-- `MD_CONVERT_URL` (e.g. `http://localhost:8000`)
-- `INGEST_SUPABASE` = `true` to enable Supabase writes (optional)
-- `SUPABASE_URL` / `SUPABASE_ANON_KEY`
-- `SUPABASE_BUCKET_FILES` (default: `files`)
+Visit http://localhost:3000 to explore the UI. API routes live under `/app/api/*`.
+
+## Migrations
+
+Apply Supabase migrations in order:
+
+```
+supabase db push --file supabase/schema/0001_init.sql
+...
+supabase db push --file supabase/schema/0007_chat_corpus.sql
+```
+
+## Smoke Checks
+
+Run minimal tests before shipping:
+
+```bash
+# Type safety and lint
+npm run typecheck
+npm run lint
+
+# API contract smokes (Vitest)
+npm run test
+```
+
+Manual curls (replace tokens as required):
+
+```bash
+curl -F "file=@fixtures/demo.pdf" http://localhost:3000/api/ingest/convert
+curl -X POST http://localhost:3000/api/ingest/chatgpt \
+  -H "Content-Type: application/json" \
+  -d '{"fileUrl":"http://localhost:3000/fixtures/chatgpt-sample.json"}'
+```
+
+## Environment
+
+```
+MD_CONVERT_URL=http://localhost:8000
+INGEST_SUPABASE=false
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_KEY=
+SUPABASE_BUCKET_FILES=files
+ALPHA_VANTAGE_KEY=
+```
+
+Set `INGEST_SUPABASE=true` when you want archives/manifests pushed into Supabase storage and tables.
 
 ## Notes
-- Uses `unzipit` to unpack the worker ZIP in-memory.
-- If Supabase is **disabled**, the route returns a JSON summary (filenames, bytes).
-- Front‑matter insertion/merge is left as a TODO (depends on your markdown policy).
 
-## Clean Intent
-Log provenance (`manifest.json`) with extractor list and converted_at; keep auditability.
+- `/api/ingest/convert` streams uploads to `md-convert`, zips results, and (optionally) stores them in Supabase.
+- `/api/ingest/chatgpt` streams ChatGPT exports into `conversations` + `messages`.
+- `/api/knowledge/index` runs the Xenova embedding script inline for now.
+- `/api/search` performs cosine ranking using the local MiniLM model.
+- Historian receives events for ingest, embedding, API manager, MVP generator, and research runs.
