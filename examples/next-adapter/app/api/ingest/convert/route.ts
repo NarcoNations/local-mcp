@@ -1,4 +1,5 @@
 export const runtime = 'nodejs';
+import { NextRequest } from 'next/server';
 
 import { getSupabase, uploadBuffer } from '../../../lib/supabase';
 import { unzipToMemory } from '../../../lib/unzip';
@@ -89,14 +90,9 @@ export async function POST(req: Request) {
       }
     }
 
-    return Response.json({
-      ok: true,
-      slug,
-      files: uploaded,
-      manifest,
-      usedSupabase: Boolean(supabase)
-    });
-  } catch (err: any) {
-    return new Response(`Error: ${err?.message || String(err)}`, { status: 500 });
+    // For now, just return a stub response to confirm deployment.
+    return Response.json({ ok: true, note: 'convert route scaffold', mdConvertUrl });
+  } catch (e: any) {
+    return new Response('Error: ' + e.message, { status: 500 });
   }
 }
