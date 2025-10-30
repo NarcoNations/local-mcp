@@ -14,7 +14,7 @@ export async function upsertKnowledge(
   row: KnowledgeRow
 ) {
   const { error } = await supabase
-    .from('knowledge')
-    .upsert(row, { onConflict: 'slug' });
+    .from('knowledge' as any)
+    .upsert(row as any, { onConflict: 'slug' });
   if (error) throw error;
 }

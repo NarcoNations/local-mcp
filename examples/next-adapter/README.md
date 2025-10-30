@@ -1,6 +1,11 @@
 # Next.js Adapter (Example) — `/app/api/ingest/convert`
 
-This example shows a minimal **Next.js 14** API route that proxies an upload to the **md-convert** worker, unzips the result, and (optionally) writes files to **Supabase Storage**.
+This example now ships a production-grade slice of **VibeOS**:
+
+- Semi-autonomous job runner (`worker/jobs.ts`) with `/api/jobs/dispatch`
+- Telemetry surface (`/metrics`, `/api/metrics`) with provider usage + health
+- Eval Lab (`/evals`, `/api/evals/run`) for model/prompt benchmarking
+- Ethics Council (`/policy`) with reusable policy checks + Shadow Self logging
 
 > It lives in `examples/next-adapter/` so it **won’t affect your main build**. Run it standalone if you want to test end-to-end.
 
@@ -18,7 +23,10 @@ npm run dev
 - `MD_CONVERT_URL` (e.g. `http://localhost:8000`)
 - `INGEST_SUPABASE` = `true` to enable Supabase writes (optional)
 - `SUPABASE_URL` / `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_KEY` (for server-only writes)
 - `SUPABASE_BUCKET_FILES` (default: `files`)
+- `FF_JOBS_WORKER`, `FF_COST_TELEMETRY`, `FF_EVALS`, `FF_MAP_PIPELINE`, `FF_SOCIAL_PIPELINE`
+- `USE_MOCKS` (optional) to rely on deterministic fixtures
 
 ## Notes
 - Uses `unzipit` to unpack the worker ZIP in-memory.
@@ -27,3 +35,5 @@ npm run dev
 
 ## Clean Intent
 Log provenance (`manifest.json`) with extractor list and converted_at; keep auditability.
+
+See `docs/OPERATIONS.md`, `docs/SECURITY.md`, and `docs/EVALS.md` for extended operations guidance.

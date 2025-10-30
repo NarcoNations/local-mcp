@@ -1,6 +1,6 @@
 export const runtime = 'nodejs';
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
 const TelemetryBody = z.object({
@@ -19,7 +19,7 @@ function getSupabaseAdmin() {
   return createClient(url, key, { auth: { persistSession: false } });
 }
 
-function bearerOk(req) {
+function bearerOk(req: Request) {
   const token = process.env.TELEMETRY_BEARER_TOKEN;
   if (!token) return true;
   const auth = req.headers.get('authorization') || '';
@@ -27,7 +27,7 @@ function bearerOk(req) {
   return Boolean(m && m[1] === token);
 }
 
-async function ensureChannelId(supabase, key) {
+async function ensureChannelId(supabase: SupabaseClient, key?: string | null) {
   if (!key) return null;
   const { data: found } = await supabase.from('channels').select('id').eq('key', key).maybeSingle();
   if (found?.id) return found.id;
@@ -36,7 +36,7 @@ async function ensureChannelId(supabase, key) {
   return data?.id || null;
 }
 
-export async function POST(req) {
+export async function POST(req: Request) {
   try {
     if (!bearerOk(req)) return new Response('Unauthorized', { status: 401 });
 
@@ -63,7 +63,7 @@ export async function POST(req) {
     if (error) return new Response('DB error: ' + error.message, { status: 500 });
 
     return Response.json({ ok: true });
-  } catch (err) {
+  } catch (err: any) {
     return new Response('Error: ' + (err?.message || String(err)), { status: 500 });
   }
 }
