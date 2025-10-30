@@ -1,8 +1,7 @@
-export default function Page() {
-  return (
-    <main style={{ padding: 24 }}>
-      <h1>Prompt Library</h1>
-      <p>Store, version, score prompts; multi-model runs; linter/optimizer. (Placeholder)</p>
-    </main>
-  );
+import { PromptsLibraryView } from '../../../src/components/prompts/PromptsLibraryView';
+import { getPrompts } from '../../../src/data/prompts';
+
+export default async function Page() {
+  const prompts = await getPrompts();
+  return <PromptsLibraryView prompts={prompts} />;
 }
