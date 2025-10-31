@@ -24,6 +24,7 @@ import {
   ImportChatGPTSchema,
   ImportChatGPTShape,
 } from "../tools/importChatGPT.js";
+import { createMdConvertTool, MdConvertSchema, MdConvertShape } from "../tools/mdConvert.js";
 
 export interface ToolKit {
   searchLocal: ReturnType<typeof createSearchLocalTool>;
@@ -32,6 +33,7 @@ export interface ToolKit {
   watch: ReturnType<typeof createWatchTool>;
   stats: ReturnType<typeof createStatsTool>;
   importChatGPT: ReturnType<typeof createImportChatGPTTool>;
+  mdConvert: ReturnType<typeof createMdConvertTool>;
 }
 
 export interface ToolKitOptions {
@@ -53,7 +55,8 @@ export function createToolKit(config: AppConfig, options?: ToolKitOptions): Tool
       .catch((err) => logger.warn("watch-notify-failed", { err: String(err) }));
   });
   const importChatGPT = createImportChatGPTTool(config);
-  return { searchLocal, getDoc, reindex, watch, stats, importChatGPT };
+  const mdConvert = createMdConvertTool(config);
+  return { searchLocal, getDoc, reindex, watch, stats, importChatGPT, mdConvert };
 }
 
 export function registerMcpTools(server: McpServer, toolkit: ToolKit): void {
@@ -179,6 +182,29 @@ export function registerMcpTools(server: McpServer, toolkit: ToolKit): void {
       const result = await toolkit.importChatGPT(args);
       return {
         structuredContent: result,
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+  );
+
+  server.registerTool(
+    "doc_to_md_convert",
+    {
+      title: "Convert document via md-convert",
+      description: "Send a local document to the md-convert worker, persist Markdown + assets, and reindex the output.",
+      inputSchema: MdConvertShape,
+      annotations: { readOnlyHint: false, title: "Convert Document" },
+    },
+    async (args: z.infer<typeof MdConvertSchema>) => {
+      const result = await toolkit.mdConvert(args);
+      const structured = JSON.parse(JSON.stringify(result)) as Record<string, unknown>;
+      return {
+        structuredContent: structured,
         content: [
           {
             type: "text" as const,

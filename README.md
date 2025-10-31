@@ -99,6 +99,7 @@ One-shot tool call:
 | `watch` | Watch directories via chokidar and trigger incremental reindexing. |
 | `stats` | Manifest summary (files, chunks, counts by type, embedding cache size). |
 | `import_chatgpt_export` | Convert ChatGPT exports to Markdown and reindex the output. |
+| `doc_to_md_convert` | Send a local document through md-convert, persist Markdown + assets, then reindex. |
 
 ## Configuration
 
