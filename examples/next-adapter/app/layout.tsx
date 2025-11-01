@@ -23,49 +23,46 @@ const navLinks = [
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="h-full">
-      <body className="min-h-full">
-        <div className="flex min-h-screen flex-col">
-          <header className="sticky top-0 z-40 border-b border-border/60 bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/75">
-            <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-4 px-6 py-4 lg:px-12">
-              <div className="flex flex-col gap-1">
-                <span className="text-sm font-semibold uppercase tracking-[0.32em] text-text-muted">Narco Nations</span>
-                <span className="text-lg font-semibold text-text">VibeOS Control Deck</span>
-              </div>
-              <nav aria-label="Primary" className="flex flex-wrap items-center gap-3 text-sm lg:gap-4">
-                {navLinks.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={twMerge(
-                      'rounded-full px-3 py-1.5 font-medium text-text-muted transition-colors hover:bg-surface-muted/70 hover:text-text focus-visible:bg-surface-muted focus-visible:text-text',
-                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface'
-                    )}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </nav>
-            </div>
-          </header>
-          <main className={clsx('flex-1 pb-16')}>{children}</main>
-          <footer className="border-t border-border/60 bg-surface/80">
-            <div className="mx-auto flex max-w-[1440px] flex-col gap-3 px-6 py-6 text-sm text-text-muted sm:flex-row sm:items-center sm:justify-between lg:px-12">
-              <p>Narco Nations × VibeLabz — phase two prototype.</p>
-              <div className="flex flex-wrap gap-3">
-                <Link className="hover:text-text" href="/dept/strategy-board">
-                  Strategy Board
-                </Link>
-                <Link className="hover:text-text" href="/dept/ideas-lab">
-                  Ideas Lab
-                </Link>
-                <a className="hover:text-text" href="https://narconations.com" target="_blank" rel="noreferrer">
-                  NarcoNations.com
-                </a>
-              </div>
-            </div>
-          </footer>
-        </div>
+    <html lang="en">
+      <body>
+        <header
+          style={{
+            padding: '12px 16px',
+            borderBottom: '1px solid #eee',
+            display: 'flex',
+            gap: 12,
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <strong>VibeOS Adapter</strong>
+          <nav
+            style={{
+              display: 'flex',
+              gap: 12,
+              flexWrap: 'wrap',
+              justifyContent: 'flex-end',
+            }}
+          >
+            <a href="/">Home</a>
+            <a href="/timeline">Historian</a>
+            <a href="/workroom">Workroom</a>
+            <a href="/mvp">One‑Shot MVP</a>
+            <a href="/library/prompts">Prompt Library</a>
+            <a href="/research">Research Engine</a>
+            <a href="/play/map">Map Playground</a>
+            <a href="/play/social">Social Playground</a>
+            <a href="/knowledge">Knowledge</a>
+            <a href="/search">Search</a>
+            <a href="/api-manager">API Manager</a>
+            <a href="/metrics">Metrics</a>
+            <a href="/evals">Eval Lab</a>
+            <a href="/policy">Policy</a>
+            <a href="/publish">Publish</a>
+          </nav>
+        </header>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '16px 12px' }}>{children}</div>
       </body>
     </html>
   );

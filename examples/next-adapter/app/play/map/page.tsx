@@ -1,22 +1,18 @@
-import type { CSSProperties } from 'react';
+import MapPlayground from '@/examples/next-adapter/app/play/map/ui';
+import { sbServer } from '@/examples/next-adapter/lib/supabase/server';
+import { featureFlags } from '@/examples/next-adapter/lib/featureFlags';
 
-export default function MapPlayground() {
-  return (
-    <main style={mainStyle}>
-      <section style={cardStyle}>
-        <h1 style={{ margin: '0 0 12px 0' }}>Map Playground</h1>
-        <p style={leadStyle}>
-          Reserved for MapLibre + PMTiles integration. Wire this surface to load offline tiles, overlays, and interactive
-          filters once the data feed is finalised.
-        </p>
-        <div style={mapShellStyle}>
-          <div style={mapPlaceholderStyle}>
-            <span>Map canvas placeholder — connect MapLibre GL + PMTiles here.</span>
-          </div>
-        </div>
-      </section>
-    </main>
-  );
+export default async function MapPage() {
+  const sb = sbServer();
+  const { data: layers } = await sb
+    .from('map_layers')
+    .select('id, name, type, source_url, status, updated_at')
+    .order('updated_at', { ascending: false });
+  const { data: tiles } = await sb
+    .from('map_tiles')
+    .select('id, layer_id, pmtiles_url, built_at')
+    .order('built_at', { ascending: false });
+  return <MapPlayground layers={layers ?? []} tiles={tiles ?? []} enabled={featureFlags.FF_MAP_PIPELINE} />;
 }
 
 const mainStyle: CSSProperties = {
