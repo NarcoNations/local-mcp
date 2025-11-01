@@ -18,6 +18,7 @@ Master index for Spec‑Kit and related docs.
 - 25 — Chat Corpus Ingest (ChatGPT export)
 
 ## See also
+- `docs/narconations-local-mcp.md` — current state, roadmap, and component primer
 - `docs/CONSOLIDATED_BUILD.md` — roadmap & milestones
 - `docs/examples/*` — adapter examples
 
