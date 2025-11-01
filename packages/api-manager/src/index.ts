@@ -1,3 +1,4 @@
-export * from './types';
-export { fetchFeed } from './providers/feeds/alphaVantage';
-export { runLLM } from './providers/llm/router';
+export * from './types.js';
+export * from './cache/index.js';
+export { routeFeed, listProviders } from './providers/feeds/router.js';
+export { runLLM } from './providers/llm/router.js';

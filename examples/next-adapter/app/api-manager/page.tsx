@@ -16,8 +16,11 @@ type LLMResult = {
 };
 
 export default function ApiManagerPage() {
+  const [provider, setProvider] = useState('alpha');
+  const [resource, setResource] = useState<'quote' | 'timeseries' | 'company'>('quote');
   const [feedFn, setFeedFn] = useState('TIME_SERIES_DAILY');
   const [symbol, setSymbol] = useState('SPY');
+  const [interval, setInterval] = useState('1d');
   const [feedResult, setFeedResult] = useState<FeedResult | null>(null);
   const [feedLoading, setFeedLoading] = useState(false);
   const [llmTask, setLlmTask] = useState('summarize');
@@ -32,9 +35,14 @@ export default function ApiManagerPage() {
     setFeedLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/feeds/alpha?fn=${feedFn}&symbol=${encodeURIComponent(symbol)}`);
+      const params = new URLSearchParams();
+      params.set('symbol', symbol);
+      params.set('resource', resource);
+      if (resource === 'timeseries') params.set('interval', interval);
+      if (resource === 'timeseries' && feedFn) params.set('range', feedFn === 'TIME_SERIES_DAILY' ? 'full' : 'compact');
+      const res = await fetch(`/api/feeds/${provider}?${params.toString()}`);
       const json = await res.json();
-      setFeedResult(json);
+      setFeedResult(json.data ?? json);
       if (!res.ok) throw new Error(json.error || 'Feed request failed');
     } catch (err: any) {
       setError(err?.message || 'Feed probe failed');
@@ -48,14 +56,15 @@ export default function ApiManagerPage() {
     setLlmLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/llm', {
+      const res = await fetch('/api/llm/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ task: llmTask, prompt, modelHint })
       });
       const json = await res.json();
-      setLlmResult(json.result || json);
-      if (!res.ok) throw new Error(json.result?.error || json.error || 'LLM probe failed');
+      const payload = json.data ?? json;
+      setLlmResult(payload);
+      if (!res.ok) throw new Error(payload?.error || json.error || 'LLM probe failed');
     } catch (err: any) {
       setError(err?.message || 'LLM probe failed');
     } finally {
@@ -65,11 +74,11 @@ export default function ApiManagerPage() {
 
   return (
     <main style={mainStyle}>
-      <section style={cardStyle}>
+      <section style={heroCardStyle}>
         <h1 style={titleStyle}>API Manager</h1>
         <p style={leadStyle}>
-          Route free-tier data feeds and LLM tasks with inline telemetry. Caches Alpha Vantage responses for 60 seconds and
-          records Historian events for every probe.
+          Route free-tier market data and LLM tasks with inline telemetry. Choose Alpha Vantage, Finnhub, or Tiingo feeds, ride the
+          shared cache, and log every probe to the Historian timeline.
         </p>
         {error && <p style={errorStyle}>{error}</p>}
       </section>
@@ -78,7 +87,46 @@ export default function ApiManagerPage() {
         <h2 style={subtitleStyle}>Market Data Probe</h2>
         <form onSubmit={runFeedProbe} style={formStyle}>
           <label style={labelStyle}>
-            Function
+            Provider
+            <select value={provider} onChange={(event) => setProvider(event.currentTarget.value)} style={selectStyle}>
+              <option value="alpha">Alpha Vantage</option>
+              <option value="finnhub">Finnhub</option>
+              <option value="tiingo">Tiingo</option>
+              <option value="polygon" disabled>Polygon (upgrade)</option>
+            </select>
+          </label>
+          <label style={labelStyle}>
+            Resource
+            <select
+              value={resource}
+              onChange={(event) => {
+                const value = event.currentTarget.value as 'quote' | 'timeseries' | 'company';
+                setResource(value);
+              }}
+              style={selectStyle}
+            >
+              <option value="quote">Quote</option>
+              <option value="timeseries">Timeseries</option>
+              <option value="company">Company Overview</option>
+            </select>
+          </label>
+          {resource === 'timeseries' && (
+            <label style={labelStyle}>
+              Interval
+              <select value={interval} onChange={(event) => setInterval(event.currentTarget.value)} style={selectStyle}>
+                <option value="1d">1 Day</option>
+                <option value="1wk">1 Week</option>
+                <option value="1mo">1 Month</option>
+                <option value="1h">60 Min</option>
+                <option value="30min">30 Min</option>
+                <option value="15min">15 Min</option>
+                <option value="5min">5 Min</option>
+                <option value="1min">1 Min</option>
+              </select>
+            </label>
+          )}
+          <label style={labelStyle}>
+            Legacy Function (Alpha compatibility)
             <select value={feedFn} onChange={(event) => setFeedFn(event.currentTarget.value)} style={selectStyle}>
               <option value="TIME_SERIES_DAILY">TIME_SERIES_DAILY</option>
               <option value="OVERVIEW">OVERVIEW</option>
@@ -132,9 +180,12 @@ export default function ApiManagerPage() {
 }
 
 const mainStyle: CSSProperties = {
-  display: 'grid',
+  display: 'flex',
+  flexDirection: 'column',
   gap: '24px',
-  padding: '24px 0'
+  padding: '24px clamp(16px, 5vw, 48px)',
+  margin: '0 auto',
+  maxWidth: 'min(1080px, 100vw)'
 };
 
 const cardStyle: CSSProperties = {
@@ -145,6 +196,13 @@ const cardStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   gap: '16px'
+};
+
+const heroCardStyle: CSSProperties = {
+  ...cardStyle,
+  background: 'linear-gradient(135deg, rgba(15,23,42,0.92), rgba(15,23,42,0.75))',
+  color: 'white',
+  textShadow: '0 2px 12px rgba(0,0,0,0.25)'
 };
 
 const titleStyle: CSSProperties = {
@@ -159,7 +217,7 @@ const subtitleStyle: CSSProperties = {
 
 const leadStyle: CSSProperties = {
   margin: 0,
-  color: 'rgba(0,0,0,0.65)',
+  color: 'rgba(255,255,255,0.85)',
   lineHeight: 1.6
 };
 

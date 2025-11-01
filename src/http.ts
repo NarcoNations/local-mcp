@@ -9,6 +9,17 @@ import { loadConfig } from "./config.js";
 import { logger } from "./utils/logger.js";
 import { createToolKit, registerMcpTools } from "./mcp/toolkit.js";
 import { ZodError } from "zod";
+import {
+  MemoryCache,
+  SupabaseCache,
+  routeFeed,
+  FeedRequestSchema,
+  ProviderError,
+  LLMRunSchema,
+  runLLM,
+} from "../packages/api-manager/src/index.js";
+import type { CacheClient, FeedRequest, FeedResult, ProviderId, LLMRun } from "../packages/api-manager/src/types.js";
+import { recordHistorianEvent } from "./utils/historian.js";
 
 const SERVER_INFO = {
   name: "mcp-nn",
@@ -33,6 +44,29 @@ const logSubscribers = new Set<Response>();
 const logs: LogEntry[] = [];
 const MAX_LOGS = 250;
 
+class HybridCache implements CacheClient {
+  constructor(private readonly memory = new MemoryCache({ maxEntries: 500 }), private readonly remote?: SupabaseCache | null) {}
+
+  async get<T>(key: string): Promise<T | null> {
+    const fromMemory = this.memory.get<T>(key);
+    if (fromMemory) return fromMemory;
+    if (!this.remote) return null;
+    const remoteValue = await this.remote.get<T>(key);
+    if (remoteValue) {
+      this.memory.set(key, remoteValue, 60);
+      return remoteValue;
+    }
+    return null;
+  }
+
+  async set<T>(key: string, value: T, ttlSeconds: number): Promise<void> {
+    this.memory.set(key, value, ttlSeconds);
+    if (this.remote) {
+      await this.remote.set(key, value, ttlSeconds);
+    }
+  }
+}
+
 function pushLog(level: LogEntry["level"], message: string, details?: Record<string, unknown>) {
   const entry: LogEntry = {
     id: randomUUID(),
@@ -54,14 +88,47 @@ function pushLog(level: LogEntry["level"], message: string, details?: Record<str
   }
 }
 
-function parseList(env?: string): string[] | undefined {
-  if (!env) return undefined;
-  const parts = env
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
-  return parts.length ? parts : undefined;
-}
+  function parseList(env?: string): string[] | undefined {
+    if (!env) return undefined;
+    const parts = env
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+    return parts.length ? parts : undefined;
+  }
+
+  function normaliseProviderId(value: string): ProviderId {
+    const map: Record<string, ProviderId> = {
+      alpha: "alpha",
+      alphavantage: "alpha",
+      finnhub: "finnhub",
+      tiingo: "tiingo",
+      polygon: "polygon",
+    };
+    const key = value.toLowerCase();
+    return map[key] ?? (key as ProviderId);
+  }
+
+  function parseFeedRequest(req: Request): FeedRequest {
+    const providerParam = typeof req.params.provider === "string" ? req.params.provider : "";
+    const provider = normaliseProviderId(providerParam);
+    const rawResource = typeof req.query.resource === "string" ? req.query.resource : undefined;
+    const fn = typeof req.query.fn === "string" ? req.query.fn : undefined;
+    const symbol = typeof req.query.symbol === "string" ? req.query.symbol : "";
+    const interval = typeof req.query.interval === "string" ? req.query.interval : undefined;
+    const range = typeof req.query.range === "string" ? req.query.range : undefined;
+    const resourceMap: Record<string, string> = {
+      quote: "quote",
+      overview: "company",
+      company: "company",
+      timeseries: "timeseries",
+      "time_series_daily": "timeseries",
+    };
+    const fallback = fn ? resourceMap[fn.toLowerCase()] : undefined;
+    const resource = rawResource ?? fallback ?? "quote";
+    const forceRefresh = req.query.force === "1" || req.query.force === "true" || req.query.refresh === "true";
+    return FeedRequestSchema.parse({ provider, resource, symbol, interval, range, forceRefresh });
+  }
 
 function resolveStaticDir(): { root: string; index: string } | null {
   const candidates = [
@@ -87,13 +154,17 @@ function getSessionId(req: Request): string | undefined {
   return queryId;
 }
 
-async function main() {
-  const config = await loadConfig();
-  const httpToolkit = createToolKit(config, {
-    onWatchEvent: (event) => {
-      pushLog("info", "watch-event", event as Record<string, unknown>);
-    },
-  });
+  async function main() {
+    const config = await loadConfig();
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY;
+    const remoteCache = supabaseUrl && supabaseKey ? new SupabaseCache(supabaseUrl, supabaseKey) : null;
+    const feedCache = new HybridCache(new MemoryCache({ maxEntries: 600 }), remoteCache);
+    const httpToolkit = createToolKit(config, {
+      onWatchEvent: (event) => {
+        pushLog("info", "watch-event", event as Record<string, unknown>);
+      },
+    });
 
   const app = express();
   app.use(
@@ -198,19 +269,33 @@ async function main() {
     res.status(204).end();
   });
 
-  async function respond<T>(res: Response, operation: () => Promise<T>, context: { success?: string; error?: string; meta?: Record<string, unknown> }) {
+  async function respond<T>(
+    res: Response,
+    operation: () => Promise<T>,
+    context: {
+      success?: string;
+      error?: string;
+      meta?: Record<string, unknown>;
+      onSuccess?: (data: T) => void | Promise<void>;
+      onError?: (error: unknown) => void | Promise<void>;
+    }
+  ) {
     try {
       const data = await operation();
       if (context.success) {
         pushLog("info", context.success, context.meta);
       }
+      await context.onSuccess?.(data);
       res.json({ ok: true, data });
     } catch (error) {
       const isValidation = error instanceof ZodError;
+      const isProvider = error instanceof ProviderError;
       const message = error instanceof Error ? error.message : String(error);
       const meta = { ...(context.meta ?? {}), error: message };
       pushLog("error", context.error ?? "api-error", meta);
-      res.status(isValidation ? 400 : 500).json({ ok: false, error: message });
+      await context.onError?.(error);
+      const status = isValidation ? 400 : isProvider && error.status ? error.status : 500;
+      res.status(status).json({ ok: false, error: message });
     }
   }
 
@@ -281,8 +366,102 @@ async function main() {
     );
   });
 
+  app.get("/api/feeds/:provider", async (req, res) => {
+    let request: FeedRequest;
+    try {
+      request = parseFeedRequest(req);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      res.status(400).json({ ok: false, error: message });
+      return;
+    }
+    const started = Date.now();
+    await respond<FeedResult>(
+      res,
+      () => routeFeed(request, { cache: feedCache }),
+      {
+        success: "feed-request-success",
+        error: "feed-request-failed",
+        meta: { provider: request.provider, resource: request.resource, symbol: request.symbol },
+        onSuccess: async (result) => {
+          await recordHistorianEvent({
+            source: "api-manager",
+            kind: "api.feed",
+            title: `${request.provider}.${request.resource}`,
+            status: "ok",
+            meta: {
+              symbol: request.symbol,
+              cached: result.cached,
+              latencyMs: Date.now() - started,
+            },
+          });
+        },
+        onError: async (error) => {
+          await recordHistorianEvent({
+            source: "api-manager",
+            kind: "api.feed",
+            title: `${request.provider}.${request.resource}`,
+            status: "error",
+            meta: {
+              symbol: request.symbol,
+              error: error instanceof Error ? error.message : String(error),
+            },
+          });
+        },
+      }
+    );
+  });
+
   app.get("/api/logs", (_req, res) => {
     res.json({ ok: true, data: logs });
+  });
+
+  app.post("/api/llm/run", async (req, res) => {
+    let payload: LLMRun;
+    try {
+      payload = LLMRunSchema.parse(req.body);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      res.status(400).json({ ok: false, error: message });
+      return;
+    }
+    const started = Date.now();
+    await respond(
+      res,
+      () => runLLM(payload),
+      {
+        success: "llm-run-success",
+        error: "llm-run-failed",
+        meta: { task: payload.task, hint: payload.modelHint ?? null },
+        onSuccess: async (result) => {
+          await recordHistorianEvent({
+            source: "api-manager",
+            kind: "api.llm",
+            title: `${result.provider}:${result.model}`,
+            status: result.error ? "warn" : "ok",
+            meta: {
+              task: payload.task,
+              latencyMs: result.latencyMs,
+              costEst: result.costEst,
+              hint: payload.modelHint ?? null,
+              durationMs: Date.now() - started,
+            },
+          });
+        },
+        onError: async (error) => {
+          await recordHistorianEvent({
+            source: "api-manager",
+            kind: "api.llm",
+            title: `${payload.task}`,
+            status: "error",
+            meta: {
+              hint: payload.modelHint ?? null,
+              error: error instanceof Error ? error.message : String(error),
+            },
+          });
+        },
+      }
+    );
   });
 
   app.get("/api/logs/stream", (req, res) => {

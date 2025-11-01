@@ -1,0 +1,42 @@
+# EDIT HERE: adjust model preferences, caps, and fallbacks per deployment.
+tasks:
+  default:
+    primary:
+      provider: openai
+      model: gpt-4o-mini
+      maxCost: 0.02
+      maxLatencyMs: 15000
+    local:
+      provider: local
+      model: local-mock
+  summarize:
+    primary:
+      provider: openai
+      model: gpt-4o-mini
+      maxCost: 0.015
+      maxLatencyMs: 12000
+    local:
+      provider: local
+      model: local-mock
+  draft_copy:
+    primary:
+      provider: openai
+      model: gpt-4o-mini
+      maxCost: 0.02
+      maxLatencyMs: 18000
+    secondary:
+      provider: openai
+      model: gpt-4o-mini
+      maxCost: 0.025
+    local:
+      provider: local
+      model: local-mock
+  classify:
+    primary:
+      provider: openai
+      model: gpt-4o-mini
+      maxCost: 0.01
+      maxLatencyMs: 8000
+    local:
+      provider: local
+      model: local-mock

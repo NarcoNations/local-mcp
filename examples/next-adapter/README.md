@@ -19,6 +19,14 @@ npm run dev
 - `INGEST_SUPABASE` = `true` to enable Supabase writes (optional)
 - `SUPABASE_URL` / `SUPABASE_ANON_KEY`
 - `SUPABASE_BUCKET_FILES` (default: `files`)
+- **API Manager feeds** (optional):
+  - `ALPHA_VANTAGE_KEY`
+  - `FINNHUB_KEY`
+  - `TIINGO_KEY`
+  - `SUPABASE_SERVICE_ROLE_KEY` (persist cache + prompt runs)
+  - `HISTORIAN_LOG_PATH` (override local JSONL log)
+
+All feed providers fall back to the in-memory cache when Supabase credentials are absent.
 
 ## Notes
 - Uses `unzipit` to unpack the worker ZIP in-memory.

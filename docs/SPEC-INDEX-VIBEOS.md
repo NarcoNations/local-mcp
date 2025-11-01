@@ -16,6 +16,7 @@ Master index for Spec‑Kit and related docs.
 - 23 — LLM Routing (Local ↔ Cloud)
 - 24 — Whiteboard OS
 - 25 — Chat Corpus Ingest (ChatGPT export)
+- 26 — API Manager Multi-Provider & Router Policies
 
 ## See also
 - `docs/CONSOLIDATED_BUILD.md` — roadmap & milestones
