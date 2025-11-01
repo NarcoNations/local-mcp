@@ -13,6 +13,11 @@ import { indexMarkdown } from "../indexers/markdown.js";
 import { indexText } from "../indexers/text.js";
 import { indexWord } from "../indexers/word.js";
 import { indexPages } from "../indexers/pages.js";
+import {
+  supabaseKnowledgeEnabled,
+  loadKnowledgeSnapshot,
+  persistKnowledgeSnapshot,
+} from "../../supabase/knowledge.js";
 
 export interface ReindexStats {
   indexed: number;
@@ -36,6 +41,18 @@ function cloneManifest(manifest: Manifest): Manifest {
   return JSON.parse(JSON.stringify(manifest));
 }
 
+function normaliseManifest(manifest: Manifest | null | undefined): Manifest {
+  const base = defaultManifest();
+  if (!manifest) return base;
+  const merged = {
+    ...base,
+    ...manifest,
+    files: manifest.files ?? {},
+    byType: { ...base.byType, ...(manifest.byType ?? {}) },
+  } satisfies Manifest;
+  return merged;
+}
+
 export class KnowledgeStore {
   private chunkPath: string;
   private manifestPath: string;
@@ -44,6 +61,7 @@ export class KnowledgeStore {
   private fileToChunks = new Map<string, string[]>();
   private vectorIndex: FlatVectorIndex;
   private keywordIndex = new KeywordIndex();
+  private readonly useSupabase = supabaseKnowledgeEnabled();
 
   constructor(private config: AppConfig) {
     const dataDir = path.resolve(process.cwd(), config.out.dataDir);
@@ -52,42 +70,89 @@ export class KnowledgeStore {
     this.vectorIndex = new FlatVectorIndex(dataDir);
   }
 
-  async load(): Promise<void> {
-    await fs.mkdir(path.dirname(this.chunkPath), { recursive: true });
-    try {
-      const raw = await fs.readFile(this.chunkPath, "utf8");
-      const stored = JSON.parse(raw) as Chunk[];
-      stored.forEach((chunk) => {
-        this.chunks.set(chunk.id, chunk);
-        const list = this.fileToChunks.get(chunk.path) ?? [];
-        list.push(chunk.id);
-        this.fileToChunks.set(chunk.path, list);
-      });
-    } catch (err: any) {
-      if (err?.code !== "ENOENT") {
-        logger.error("chunk-store-load-failed", { err: String(err) });
-      }
-    }
-
-    try {
-      const rawManifest = await fs.readFile(this.manifestPath, "utf8");
-      this.manifest = JSON.parse(rawManifest) as Manifest;
-    } catch (err: any) {
-      if (err?.code === "ENOENT") {
-        this.manifest = defaultManifest();
-      } else {
-        logger.error("manifest-load-failed", { err: String(err) });
-      }
-    }
-
-    await this.vectorIndex.load();
-    this.keywordIndex.rebuild(Array.from(this.chunks.values()));
-    if (this.vectorIndex.size === 0 && this.chunks.size > 0) {
-      await this.rebuildVectorIndex();
+  private resetChunks(chunks: Chunk[]): void {
+    this.chunks.clear();
+    this.fileToChunks.clear();
+    for (const chunk of chunks) {
+      this.chunks.set(chunk.id, chunk);
+      const list = this.fileToChunks.get(chunk.path) ?? [];
+      list.push(chunk.id);
+      this.fileToChunks.set(chunk.path, list);
     }
   }
 
-  private async rebuildVectorIndex(): Promise<void> {
+  async load(): Promise<void> {
+    await fs.mkdir(path.dirname(this.chunkPath), { recursive: true });
+    let vectorsLoaded = false;
+    let snapshotEmbeddings: Map<string, Float32Array> | null = null;
+
+    if (this.useSupabase) {
+      try {
+        const snapshot = await loadKnowledgeSnapshot();
+        if (snapshot) {
+          this.resetChunks(snapshot.chunks);
+          this.manifest = normaliseManifest(snapshot.manifest);
+          snapshotEmbeddings = snapshot.embeddings;
+        }
+      } catch (err: any) {
+        logger.warn("supabase-load-failed", { err: String(err) });
+      }
+    }
+
+    if (this.chunks.size === 0) {
+      try {
+        const raw = await fs.readFile(this.chunkPath, "utf8");
+        const stored = JSON.parse(raw) as Chunk[];
+        this.resetChunks(stored);
+      } catch (err: any) {
+        if (err?.code !== "ENOENT") {
+          logger.error("chunk-store-load-failed", { err: String(err) });
+        }
+      }
+    }
+
+    if (!this.manifest || Object.keys(this.manifest.files ?? {}).length === 0) {
+      try {
+        const rawManifest = await fs.readFile(this.manifestPath, "utf8");
+        this.manifest = normaliseManifest(JSON.parse(rawManifest) as Manifest);
+      } catch (err: any) {
+        if (err?.code === "ENOENT") {
+          this.manifest = defaultManifest();
+        } else {
+          logger.error("manifest-load-failed", { err: String(err) });
+        }
+      }
+    }
+
+    if (snapshotEmbeddings && snapshotEmbeddings.size > 0) {
+      await this.vectorIndex.rebuild(snapshotEmbeddings);
+      this.manifest.embeddingsCached = snapshotEmbeddings.size;
+      vectorsLoaded = true;
+    } else {
+      await this.vectorIndex.load();
+      vectorsLoaded = this.vectorIndex.size > 0;
+    }
+
+    this.keywordIndex.rebuild(Array.from(this.chunks.values()));
+
+    if (!vectorsLoaded && this.chunks.size > 0) {
+      const embeddings = await this.rebuildVectorIndex();
+      await this.persistAll(embeddings);
+    } else if (
+      this.useSupabase &&
+      (!snapshotEmbeddings || snapshotEmbeddings.size === 0) &&
+      this.chunks.size > 0 &&
+      this.vectorIndex.size > 0
+    ) {
+      const embeddings = new Map<string, Float32Array>(this.vectorIndex.entries());
+      await this.persistAll(embeddings);
+    } else if (this.useSupabase) {
+      await this.persistChunksLocal();
+      await this.persistManifestLocal();
+    }
+  }
+
+  private async rebuildVectorIndex(): Promise<Map<string, Float32Array>> {
     const embeddings = new Map<string, Float32Array>();
     for (const [id, chunk] of this.chunks.entries()) {
       const cacheKey = chunkCacheKey(chunk.path, chunk.mtime, chunk.offsetStart, chunk.offsetEnd);
@@ -100,7 +165,7 @@ export class KnowledgeStore {
     }
     await this.vectorIndex.rebuild(embeddings);
     this.manifest.embeddingsCached = embeddings.size;
-    await this.persistManifest();
+    return embeddings;
   }
 
   async reindex(targets: string[]): Promise<ReindexStats> {
@@ -174,8 +239,7 @@ export class KnowledgeStore {
     }
     this.manifest.lastIndexedAt = Date.now();
 
-    await this.persistChunks();
-    await this.persistManifest();
+    await this.persistAll(embeddings);
 
     return stats;
   }
@@ -189,11 +253,23 @@ export class KnowledgeStore {
     return null;
   }
 
-  private async persistChunks(): Promise<void> {
+  private async persistAll(embeddings: Map<string, Float32Array>): Promise<void> {
+    if (this.useSupabase) {
+      try {
+        await persistKnowledgeSnapshot(Array.from(this.chunks.values()), cloneManifest(this.manifest), embeddings);
+      } catch (err: any) {
+        logger.warn("supabase-persist-failed", { err: String(err) });
+      }
+    }
+    await this.persistChunksLocal();
+    await this.persistManifestLocal();
+  }
+
+  private async persistChunksLocal(): Promise<void> {
     await fs.writeFile(this.chunkPath, JSON.stringify(Array.from(this.chunks.values()), null, 2), "utf8");
   }
 
-  private async persistManifest(): Promise<void> {
+  private async persistManifestLocal(): Promise<void> {
     await fs.writeFile(this.manifestPath, JSON.stringify(cloneManifest(this.manifest), null, 2), "utf8");
   }
 
