@@ -1,86 +1,14 @@
-'use client';
-import { useState, type ChangeEvent, type CSSProperties, type FormEvent } from 'react';
+import MvpDashboard from '@/examples/next-adapter/app/mvp/ui';
+import { sbServer } from '@/examples/next-adapter/lib/supabase/server';
 
-type GeneratorResponse = {
-  ok?: boolean;
-  durationMs?: number;
-};
-
-export default function MvpPage() {
-  const [brief, setBrief] = useState('Build a local-first research assistant that stitches ingest → embeddings → insights.');
-  const [file, setFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setLoading(true);
-    setError(null);
-    setStatus(null);
-    try {
-      const form = new FormData();
-      form.append('brief', brief);
-      if (file) form.append('briefJson', file);
-      const res = await fetch('/api/mvp/generate', { method: 'POST', body: form });
-      if (!res.ok) throw new Error(await res.text());
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'mvp-blueprint.zip';
-      link.click();
-      URL.revokeObjectURL(url);
-      setStatus('Blueprint downloaded. Check your downloads folder.');
-    } catch (err: any) {
-      setError(err?.message || 'MVP generation failed');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleFile(event: ChangeEvent<HTMLInputElement>) {
-    const next = event.currentTarget.files?.[0] || null;
-    setFile(next);
-    if (next) {
-      try {
-        const text = await next.text();
-        const json = JSON.parse(text);
-        if (Array.isArray(json?.stickies) && json.stickies.length > 0) {
-          setStatus(`Imported ${json.stickies.length} stickies from brief.json`);
-        }
-      } catch (err) {
-        setStatus('Attached brief.json (unable to parse preview)');
-      }
-    }
-  }
-
-  return (
-    <main style={mainStyle}>
-      <section style={cardStyle}>
-        <h1 style={titleStyle}>One-Shot MVP Generator</h1>
-        <p style={leadStyle}>
-          Provide a written brief and optional Workroom export. We return a zip containing ARCHITECTURE.md, ROUTES.md, and
-          DATA_MODEL.md ready for iteration.
-        </p>
-        <form onSubmit={handleSubmit} style={formStyle}>
-          <label style={labelStyle}>
-            Brief
-            <textarea value={brief} onChange={(event) => setBrief(event.currentTarget.value)} rows={6} style={textareaStyle} />
-          </label>
-          <label style={labelStyle}>
-            Attach brief.json (optional)
-            <input type="file" accept="application/json" onChange={handleFile} style={inputStyle} />
-          </label>
-          <button type="submit" style={buttonStyle} disabled={loading}>
-            {loading ? 'Generating…' : 'Generate blueprint'}
-          </button>
-        </form>
-        {status && <p style={statusStyle}>{status}</p>}
-        {error && <p style={errorStyle}>{error}</p>}
-      </section>
-    </main>
-  );
+export default async function MvpPage() {
+  const sb = sbServer();
+  const { data } = await sb
+    .from('build_briefs')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(20);
+  return <MvpDashboard briefs={data ?? []} />;
 }
 
 const mainStyle: CSSProperties = {

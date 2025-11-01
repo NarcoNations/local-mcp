@@ -1,8 +1,9 @@
-import { sbServer } from '@/examples/next-adapter/lib/supabase/server';
+import { sbMaybe } from '@/examples/next-adapter/lib/supabase/maybeServer';
 
 export async function logEvent(e: { source: string; kind: string; title: string; body?: string; link?: string; meta?: any }) {
   try {
-    const sb = sbServer();
+    const sb = sbMaybe();
+    if (!sb) return;
     await sb.from('events').insert({
       ts: new Date().toISOString(),
       source: e.source,

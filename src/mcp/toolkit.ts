@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { AppConfig } from "../config.js";
 import { logger } from "../utils/logger.js";
+import { WatchTracker } from "../lib/watch-tracker.js";
 import {
   createSearchLocalTool,
   SearchLocalInputSchema,
@@ -37,6 +38,7 @@ export interface ToolKit {
 export interface ToolKitOptions {
   server?: McpServer;
   onWatchEvent?: (event: Record<string, unknown>, extra?: Record<string, unknown>) => void;
+  watchTracker?: WatchTracker;
 }
 
 export function createToolKit(config: AppConfig, options?: ToolKitOptions): ToolKit {
@@ -44,13 +46,22 @@ export function createToolKit(config: AppConfig, options?: ToolKitOptions): Tool
   const getDoc = createGetDocTool(config);
   const reindex = createReindexTool(config);
   const stats = createStatsTool(config);
-  const watch = createWatchTool(config, (event, extra) => {
-    options?.onWatchEvent?.(event, extra);
-    if (!options?.server) return;
-    const sessionId = (extra?.sessionId as string | undefined) ?? undefined;
-    options.server
-      .sendLoggingMessage({ level: "info", data: JSON.stringify(event) }, sessionId)
-      .catch((err) => logger.warn("watch-notify-failed", { err: String(err) }));
+  const watch = createWatchTool(config, {
+    emit: (event, extra) => {
+      options?.onWatchEvent?.(event, extra);
+      const sessionId = (extra?.sessionId as string | undefined) ?? undefined;
+      options?.watchTracker?.recordEvent(sessionId, event);
+      if (!options?.server) return;
+      options.server
+        .sendLoggingMessage({ level: "info", data: JSON.stringify(event) }, sessionId)
+        .catch((err) => logger.warn("watch-notify-failed", { err: String(err) }));
+    },
+    onStart: (sessionId, paths) => {
+      options?.watchTracker?.start(sessionId, paths);
+    },
+    onStop: (sessionId) => {
+      options?.watchTracker?.stop(sessionId);
+    },
   });
   const importChatGPT = createImportChatGPTTool(config);
   return { searchLocal, getDoc, reindex, watch, stats, importChatGPT };
