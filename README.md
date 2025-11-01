@@ -35,6 +35,13 @@ The UI (served from <http://localhost:3030>) is fully responsive, mobile-first, 
 - Maintenance actions: manual reindex, watcher activation, ChatGPT export import.
 - Live activity log streamed via SSE for visibility into reindexing, watch events, and bridge status.
 
+#### Responsive layout checkpoints
+
+- **≤600 px:** stacked status chips, vertical form actions, and space-efficient panel padding for small phones.
+- **≥768 px:** hero headline and status indicators snap into a two-column grid for crisp tablet layouts.
+- **≥960 px:** main content switches to a two-column dashboard with the search panel pinned in place.
+- **≥1200 px:** wide displays gain expanded gutters, cinematic panel padding, and a full-width activity log for command-center setups.
+
 The UI is bundled into the Vercel-friendly build output (`npm run build`) and served by the HTTP bridge.
 
 ### Expose the bridge to ChatGPT (HTTPS + SSE)

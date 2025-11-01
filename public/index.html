@@ -35,14 +35,14 @@
         color: var(--text);
         display: flex;
         justify-content: center;
-        padding: clamp(1.2rem, 2.5vw, 2.4rem);
+        padding: clamp(0.85rem, 2.75vw, 3rem);
       }
 
       .app {
-        width: min(1100px, 100%);
+        width: clamp(320px, 92vw, 1240px);
         display: flex;
         flex-direction: column;
-        gap: clamp(1.5rem, 2.5vw, 2.75rem);
+        gap: clamp(1.6rem, 3vw, 3rem);
       }
 
       .hero {
@@ -107,7 +107,15 @@
 
       main.content {
         display: grid;
-        gap: clamp(1.5rem, 2vw, 2rem);
+        gap: clamp(1.5rem, 2vw, 2.25rem);
+        align-items: stretch;
+      }
+
+      @media (min-width: 768px) {
+        .hero {
+          grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+          align-items: center;
+        }
       }
 
       @media (min-width: 960px) {
@@ -116,6 +124,24 @@
         }
         .search-panel {
           grid-row: span 2;
+        }
+      }
+
+      @media (min-width: 1200px) {
+        body {
+          padding: clamp(1.5rem, 4vw, 5rem);
+        }
+        main.content {
+          grid-template-columns: minmax(0, 2fr) minmax(0, 1.15fr);
+        }
+        .logs-panel {
+          grid-column: 1 / -1;
+        }
+        .panel {
+          padding: clamp(1.6rem, 2.5vw, 2.6rem);
+        }
+        .log-stream {
+          max-height: clamp(320px, 48vh, 560px);
         }
       }
 
@@ -490,7 +516,7 @@
       .log-stream {
         display: grid;
         gap: 0.65rem;
-        max-height: 320px;
+        max-height: clamp(260px, 40vh, 420px);
         overflow-y: auto;
         padding-right: 0.5rem;
       }
@@ -554,6 +580,23 @@
         }
         .watcher-list {
           max-height: 220px;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .status-chips {
+          flex-direction: column;
+        }
+        .chip {
+          width: 100%;
+          justify-content: space-between;
+        }
+        .form-row {
+          flex-direction: column;
+        }
+        .form-actions {
+          flex-direction: column;
+          align-items: stretch;
         }
       }
     </style>
