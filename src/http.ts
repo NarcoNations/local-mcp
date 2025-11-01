@@ -343,7 +343,7 @@ async function main() {
   const staticInfo = resolveStaticDir();
   if (staticInfo) {
     app.use(express.static(staticInfo.root, { index: false, fallthrough: true }));
-    app.get("*", (req, res, next) => {
+    app.get(/.*/, (req, res, next) => {
       if (req.path.startsWith("/api") || req.path.startsWith("/mcp")) {
         next();
         return;
