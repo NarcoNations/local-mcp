@@ -1,62 +1,71 @@
-import type { CSSProperties, ReactNode } from 'react';
+import './globals.css';
+import type { Metadata } from 'next';
+import { clsx } from 'clsx';
 import Link from 'next/link';
+import { twMerge } from 'tailwind-merge';
 
-const bodyStyle: CSSProperties = {
-  margin: 0,
-  fontFamily: `'Inter', 'Segoe UI', sans-serif`,
-  background: 'rgb(245,247,250)',
-  color: 'rgb(15,23,42)'
-};
-
-const shellStyle: CSSProperties = {
-  maxWidth: '1200px',
-  margin: '0 auto',
-  padding: '0 20px 48px 20px',
-  width: '100%'
+export const metadata: Metadata = {
+  title: 'VibeOS Ultimate Dashboard',
+  description: 'Narco Nations × VibeLabz — adaptive operating system shell built for strategy, research, and creation.'
 };
 
 const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/ingest', label: 'Ingest' },
-  { href: '/corpus', label: 'Corpus' },
-  { href: '/knowledge', label: 'Knowledge' },
-  { href: '/search', label: 'Search' },
+  { href: '/', label: 'Overview' },
   { href: '/timeline', label: 'Historian' },
-  { href: '/api-manager', label: 'API Manager' },
-  { href: '/workroom', label: 'Workroom' },
-  { href: '/mvp', label: 'One-Shot MVP' },
+  { href: '/metrics', label: 'Metrics' },
   { href: '/library/prompts', label: 'Prompt Library' },
-  { href: '/research', label: 'Research Engine' },
-  { href: '/play/map', label: 'Map Playground' },
-  { href: '/play/social', label: 'Social Playground' }
+  { href: '/research', label: 'Research' },
+  { href: '/search', label: 'Search' },
+  { href: '/play/map', label: 'Map' },
+  { href: '/play/social', label: 'Social Lab' },
+  { href: '/api-manager', label: 'API Feeds' }
 ];
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body style={bodyStyle}>
-        <style>{`
-          *, *::before, *::after { box-sizing: border-box; }
-          a { color: inherit; text-decoration: none; }
-          a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible {
-            outline: 2px solid rgba(59,130,246,0.8);
-            outline-offset: 2px;
-          }
-        `}</style>
-        <header style={headerStyle}>
-          <div style={brandStyle}>
-            <span style={{ fontWeight: 700, fontSize: '1.2rem' }}>VibeOS Adapter</span>
-            <span style={{ color: 'rgba(15,23,42,0.6)', fontSize: '0.9rem' }}>Ingest → Knowledge → Ops Surface</span>
-          </div>
-          <nav style={navStyle}>
-            {navLinks.map((link) => (
-              <Link key={link.href} href={link.href} style={navLinkStyle}>
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-        </header>
-        <div style={shellStyle}>{children}</div>
+    <html lang="en" className="h-full">
+      <body className="min-h-full">
+        <div className="flex min-h-screen flex-col">
+          <header className="sticky top-0 z-40 border-b border-border/60 bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/75">
+            <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-4 px-6 py-4 lg:px-12">
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-semibold uppercase tracking-[0.32em] text-text-muted">Narco Nations</span>
+                <span className="text-lg font-semibold text-text">VibeOS Control Deck</span>
+              </div>
+              <nav aria-label="Primary" className="flex flex-wrap items-center gap-3 text-sm lg:gap-4">
+                {navLinks.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={twMerge(
+                      'rounded-full px-3 py-1.5 font-medium text-text-muted transition-colors hover:bg-surface-muted/70 hover:text-text focus-visible:bg-surface-muted focus-visible:text-text',
+                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface'
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+          </header>
+          <main className={clsx('flex-1 pb-16')}>{children}</main>
+          <footer className="border-t border-border/60 bg-surface/80">
+            <div className="mx-auto flex max-w-[1440px] flex-col gap-3 px-6 py-6 text-sm text-text-muted sm:flex-row sm:items-center sm:justify-between lg:px-12">
+              <p>Narco Nations × VibeLabz — phase two prototype.</p>
+              <div className="flex flex-wrap gap-3">
+                <Link className="hover:text-text" href="/dept/strategy-board">
+                  Strategy Board
+                </Link>
+                <Link className="hover:text-text" href="/dept/ideas-lab">
+                  Ideas Lab
+                </Link>
+                <a className="hover:text-text" href="https://narconations.com" target="_blank" rel="noreferrer">
+                  NarcoNations.com
+                </a>
+              </div>
+            </div>
+          </footer>
+        </div>
       </body>
     </html>
   );
