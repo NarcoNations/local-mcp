@@ -186,7 +186,15 @@ Vitest covers chunking, hybrid storage, PDF OCR fallback (mocked), and ChatGPT c
 
 ## Vercel deployment
 
-`vercel.json` is configured to run `npm run build` and publish `dist/` (which now contains static docs alongside compiled JS). The build avoids native dependencies, making the project safe for Vercel preview builds.
+`vercel.json` runs `npm run build`, publishes the generated `dist/` bundle, and mounts the `api/http` Serverless Function. The handler reuses the Express/SSE bridge and is configured for Node.js 20 with a 300 s execution window so long-lived MCP streams do not disconnect. Runtime storage is redirected to `/tmp` via `MCP_NN_DATA_DIR` / `TRANSFORMERS_CACHE`, which keeps model caches writable inside Vercel’s read-only filesystem. All `/api/*`, `/mcp/*`, `/mcp.json`, and `/health` requests are rewritten to the function while static assets continue to be served from the build output.
+
+### Deployment checklist
+
+1. `npm run build` – compiles TypeScript and copies static assets into `dist/`.
+2. `npm test -- --run tests/http/app.test.ts` – exercises the HTTP bridge, including SSE header negotiation required by Vercel’s streaming runtime.
+3. `vercel build` – produces a deployable artifact using the local configuration. (Requires the Vercel CLI.)
+
+If SSE clients disconnect prematurely in production, confirm that the deployment picked up the latest `vercel.json` rewrites and that the Serverless Function memory/time limits are not reduced by project-level overrides.
 
 ## Styling & conventions
 

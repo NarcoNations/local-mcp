@@ -4,6 +4,21 @@
   "framework": null,
   "outputDirectory": "dist",
   "env": {
-    "NODE_OPTIONS": "--enable-source-maps"
-  }
+    "NODE_OPTIONS": "--enable-source-maps",
+    "MCP_NN_DATA_DIR": "/tmp/mcp-nn",
+    "TRANSFORMERS_CACHE": "/tmp/transformers"
+  },
+  "functions": {
+    "api/http.js": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 300,
+      "memory": 1024
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/http" },
+    { "source": "/mcp/(.*)", "destination": "/api/http" },
+    { "source": "/mcp.json", "destination": "/api/http" },
+    { "source": "/health", "destination": "/api/http" }
+  ]
 }
