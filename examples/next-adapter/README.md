@@ -19,9 +19,11 @@ npm run dev
 - `INGEST_SUPABASE` = `true` to enable Supabase writes (optional)
 - `SUPABASE_URL` / `SUPABASE_ANON_KEY`
 - `SUPABASE_BUCKET_FILES` (default: `files`)
+- `HISTORIAN_EVENT_TOKEN` (optional bearer token for `/api/historian/event`)
 
 ## Notes
 - Uses `unzipit` to unpack the worker ZIP in-memory.
+- `/api/historian/event` accepts MCP + adapter events and writes them to Supabase `events`.
 - If Supabase is **disabled**, the route returns a JSON summary (filenames, bytes).
 - Front‑matter insertion/merge is left as a TODO (depends on your markdown policy).
 

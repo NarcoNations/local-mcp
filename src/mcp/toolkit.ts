@@ -36,7 +36,10 @@ export interface ToolKit {
 
 export interface ToolKitOptions {
   server?: McpServer;
-  onWatchEvent?: (event: Record<string, unknown>, extra?: Record<string, unknown>) => void;
+  onWatchEvent?: (
+    event: Record<string, unknown>,
+    extra?: Record<string, unknown>
+  ) => void | Promise<void>;
 }
 
 export function createToolKit(config: AppConfig, options?: ToolKitOptions): ToolKit {

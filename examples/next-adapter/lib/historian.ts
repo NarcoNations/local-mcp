@@ -1,6 +1,17 @@
-import { sbServer } from '@/examples/next-adapter/lib/supabase/server';
+import { sbServer } from './supabase/server';
 
-export async function logEvent(e: { source: string; kind: string; title: string; body?: string; link?: string; meta?: any }) {
+type HistorianEvent = {
+  source: string;
+  kind: string;
+  title: string;
+  body?: string;
+  link?: string;
+  meta?: any;
+  severity?: 'debug' | 'info' | 'warn' | 'error';
+  session_id?: string | null;
+};
+
+export async function logEvent(e: HistorianEvent) {
   try {
     const sb = sbServer();
     await sb.from('events').insert({
@@ -10,7 +21,9 @@ export async function logEvent(e: { source: string; kind: string; title: string;
       title: e.title,
       body: e.body ?? null,
       link: e.link ?? null,
-      meta: e.meta ?? {}
+      meta: e.meta ?? {},
+      severity: e.severity ?? 'info',
+      session_id: e.session_id ?? null
     });
   } catch (_) {
     // no-op; logging must not crash requests

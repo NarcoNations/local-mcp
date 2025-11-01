@@ -33,7 +33,15 @@ export function createWatchTool(config: AppConfig, emit?: WatchEmitter) {
         } else {
           await store.reindex([abs]);
         }
-        emit?.({ event: "watch", path: abs, action: event }, extra);
+        if (emit) {
+          try {
+            await Promise.resolve(
+              emit({ event: "watch", path: abs, action: event }, extra)
+            );
+          } catch (err) {
+            logger.warn("watch-emit-failed", { err: String(err) });
+          }
+        }
       } catch (err) {
         logger.warn("watch-skip", { filePath, err: String(err) });
       }
