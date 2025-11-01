@@ -8,6 +8,7 @@ import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { loadConfig } from "./config.js";
 import { logger } from "./utils/logger.js";
 import { createToolKit, registerMcpTools } from "./mcp/toolkit.js";
+import { resolveApiManager } from "./lib/apiManager.js";
 import { ZodError } from "zod";
 
 const SERVER_INFO = {
@@ -89,10 +90,12 @@ function getSessionId(req: Request): string | undefined {
 
 async function main() {
   const config = await loadConfig();
+  const apiManager = await resolveApiManager();
   const httpToolkit = createToolKit(config, {
     onWatchEvent: (event) => {
       pushLog("info", "watch-event", event as Record<string, unknown>);
     },
+    apiManager,
   });
 
   const app = express();
@@ -120,6 +123,7 @@ async function main() {
       const toolkit = createToolKit(config, {
         server: sessionServer,
         onWatchEvent: (event) => pushLog("info", "watch-event", event as Record<string, unknown>),
+        apiManager,
       });
       registerMcpTools(sessionServer, toolkit);
 

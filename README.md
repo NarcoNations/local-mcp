@@ -131,6 +131,33 @@ Environment overrides:
 - `MCP_NN_DATA_DIR` – change index storage directory.
 - `TRANSFORMERS_CACHE` – override Xenova model cache directory.
 - `TRANSFORMERS_OFFLINE=1` – enforce offline model loads.
+- `MCP_API_MANAGER_MODULE` – path to a custom module exporting `createApiManager` for advanced provider wiring.
+
+### API manager & provider routing
+
+The MCP toolkit now boots with the `@vibelabz/api-manager` package. By default it wires up:
+
+- **LLM routing** – local echo for offline prototyping and OpenAI Chat Completions (requires `OPENAI_API_KEY`).
+- **Market data feeds** – Alpha Vantage (requires `ALPHA_VANTAGE_KEY`).
+- **Caching & normalization** – in-memory TTL cache with normalized success/error DTOs so downstream tools get consistent shapes.
+
+Override or extend the behaviour by providing your own factory module:
+
+```ts
+// ./my-api-manager.ts
+import { ApiManager, createDefaultApiManager } from "@vibelabz/api-manager";
+
+export function createApiManager(): ApiManager {
+  return createDefaultApiManager({
+    defaults: {
+      // disable the Alpha Vantage driver if you have a paid feed
+      feeds: { alphaVantage: false },
+    },
+  });
+}
+```
+
+Set `MCP_API_MANAGER_MODULE=./my-api-manager.ts` before starting `npm run dev` and the toolkit will invoke your factory (fully compatible with Vercel builds). Factories can add providers, swap routing policies, or mount shared caches.
 
 ## Data flow & storage
 

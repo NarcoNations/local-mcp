@@ -5,6 +5,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { loadConfig } from "./config.js";
 import { logger } from "./utils/logger.js";
 import { createToolKit, registerMcpTools } from "./mcp/toolkit.js";
+import { resolveApiManager } from "./lib/apiManager.js";
 
 const SERVER_INFO = {
   name: "mcp-nn",
@@ -13,6 +14,7 @@ const SERVER_INFO = {
 
 async function main() {
   const config = await loadConfig();
+  const apiManager = await resolveApiManager();
   const server = new McpServer(SERVER_INFO, {
     capabilities: {
       tools: {},
@@ -21,7 +23,7 @@ async function main() {
     instructions:
       "Local research MCP server. Use search_local for retrieval, get_doc for source text, reindex/watch to refresh, stats for corpus metrics, and import_chatgpt_export to convert ChatGPT exports.",
   });
-  const toolkit = createToolKit(config, { server });
+  const toolkit = createToolKit(config, { server, apiManager });
   registerMcpTools(server, toolkit);
 
   const transport = new StdioServerTransport();

@@ -8,7 +8,12 @@
     "skipLibCheck": true,
     "outDir": "dist",
     "strict": true,
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@vibelabz/api-manager": ["packages/api-manager/src/index.ts"],
+      "@vibelabz/api-manager/*": ["packages/api-manager/src/*"]
+    }
   },
   "include": ["src/**/*.ts", "src/types/**/*.d.ts", "tests/**/*.ts"],
   "ts-node": { "esm": true }

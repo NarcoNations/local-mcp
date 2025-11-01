@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { ApiManager, createDefaultApiManager } from "@vibelabz/api-manager";
 import { AppConfig } from "../config.js";
 import { logger } from "../utils/logger.js";
 import {
@@ -32,14 +33,17 @@ export interface ToolKit {
   watch: ReturnType<typeof createWatchTool>;
   stats: ReturnType<typeof createStatsTool>;
   importChatGPT: ReturnType<typeof createImportChatGPTTool>;
+  apiManager: ApiManager;
 }
 
 export interface ToolKitOptions {
   server?: McpServer;
   onWatchEvent?: (event: Record<string, unknown>, extra?: Record<string, unknown>) => void;
+  apiManager?: ApiManager;
 }
 
 export function createToolKit(config: AppConfig, options?: ToolKitOptions): ToolKit {
+  const apiManager = options?.apiManager ?? createDefaultApiManager();
   const searchLocal = createSearchLocalTool(config);
   const getDoc = createGetDocTool(config);
   const reindex = createReindexTool(config);
@@ -53,7 +57,7 @@ export function createToolKit(config: AppConfig, options?: ToolKitOptions): Tool
       .catch((err) => logger.warn("watch-notify-failed", { err: String(err) }));
   });
   const importChatGPT = createImportChatGPTTool(config);
-  return { searchLocal, getDoc, reindex, watch, stats, importChatGPT };
+  return { searchLocal, getDoc, reindex, watch, stats, importChatGPT, apiManager };
 }
 
 export function registerMcpTools(server: McpServer, toolkit: ToolKit): void {
