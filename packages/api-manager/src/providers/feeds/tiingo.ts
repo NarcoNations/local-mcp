@@ -1,111 +1,121 @@
-import { companySchema, quoteSchema, timeseriesSchema } from '../../dto';
-import type { FeedRequest, FeedResult } from '../../types';
+import { QuoteDTO, TimeseriesDTO, CompanyDTO, type FeedRequest, type FeedResponse } from '../../types';
 
-const TIINGO_BASE = 'https://api.tiingo.com';
+const API_BASE = 'https://api.tiingo.com';
 
-function ensureKey() {
-  const key = process.env.TIINGO_KEY;
-  if (!key) throw Object.assign(new Error('TIINGO_KEY missing'), { status: 500 });
-  return key;
+function getKey() {
+  return process.env.TIINGO_KEY || process.env.TIINGO_API_KEY;
 }
 
-async function fetchJson(path: string, params: Record<string, string | number> = {}) {
-  const key = ensureKey();
-  const url = new URL(TIINGO_BASE + path);
-  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, String(v)));
+async function fetchJson(path: string, params: Record<string, string> = {}) {
+  const apiKey = getKey();
+  if (!apiKey) return { error: 'TIINGO_KEY is not configured' };
+  const url = new URL(`${API_BASE}${path}`);
+  Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
   const res = await fetch(url.toString(), {
-    headers: { Authorization: `Token ${key}` }
+    headers: {
+      Authorization: `Token ${apiKey}`,
+    },
   });
-  if (!res.ok) throw Object.assign(new Error('tiingo request failed'), { status: res.status });
+  if (res.status === 429) {
+    return { error: 'Tiingo rate limit exceeded', retryable: true, status: res.status };
+  }
+  if (!res.ok) return { error: `Tiingo error ${res.status}` };
   return res.json();
 }
 
-export async function fetchTiingo(request: FeedRequest): Promise<FeedResult> {
-  const { kind, symbol } = request;
-  let status = 200;
+export async function fetchTiingo(request: FeedRequest): Promise<FeedResponse> {
+  const apiKey = getKey();
+  if (!apiKey) {
+    return {
+      provider: 'tiingo',
+      status: 'error',
+      cached: false,
+      error: 'TIINGO_KEY is not configured',
+    };
+  }
+
   try {
-    if (kind === 'quote') {
-      const data: any[] = await fetchJson(`/iex/${symbol}`);
-      const first = Array.isArray(data) ? data[0] : null;
-      if (!first) throw Object.assign(new Error('no tiingo quote'), { status: 404 });
-      return {
-        provider: 'tiingo',
-        kind,
-        data: quoteSchema.parse({
-          symbol,
-          price: Number(first.last ?? first.tngoLast ?? 0),
-          open: first.open ?? null,
-          high: first.high ?? null,
-          low: first.low ?? null,
-          previousClose: first.prevClose ?? null,
-          change: first.last - (first.prevClose ?? first.open ?? first.last ?? 0),
-          changePercent: first.prevClose ? ((first.last - first.prevClose) / first.prevClose) * 100 : null,
-          volume: first.volume ?? null,
-          currency: 'USD',
-          asOf: new Date(first.timestamp || first.quoteTimestamp || Date.now()).toISOString()
-        }),
-        meta: baseMeta(request, status)
-      };
-    }
-    if (kind === 'timeseries') {
-      const end = new Date();
-      const start = new Date();
-      start.setMonth(start.getMonth() - 6);
-      const prices: any[] = await fetchJson(`/tiingo/daily/${symbol}/prices`, {
-        startDate: start.toISOString().slice(0, 10),
-        endDate: end.toISOString().slice(0, 10)
+    if (request.resource === 'quote') {
+      const json: any = await fetchJson(`/iex/${request.symbol}`);
+      if (json.error) {
+        return {
+          provider: 'tiingo',
+          status: 'error',
+          cached: false,
+          error: json.error,
+          meta: { retryable: json.retryable, status: json.status },
+        };
+      }
+      const first = Array.isArray(json) ? json[0] : json;
+      const quote = QuoteDTO.parse({
+        symbol: request.symbol,
+        price: first?.last ?? null,
+        open: first?.open ?? null,
+        high: first?.high ?? null,
+        low: first?.low ?? null,
+        previousClose: first?.prevClose ?? null,
+        change: first?.last && first?.prevClose ? first.last - first.prevClose : null,
+        changePercent:
+          first?.last && first?.prevClose ? ((first.last - first.prevClose) / first.prevClose) * 100 : null,
+        currency: first?.currency ?? 'USD',
+        timestamp: first?.timestamp ?? new Date().toISOString(),
       });
-      const points = (prices || []).map((row: any) => ({
-        time: new Date(row.date).toISOString(),
+      return { provider: 'tiingo', status: 'ok', cached: false, quote, raw: json };
+    }
+
+    if (request.resource === 'timeseries') {
+      const json: any = await fetchJson(`/tiingo/daily/${request.symbol}/prices`, {
+        startDate: new Date(Date.now() - (request.range === 'compact' ? 30 : 365) * 86400000)
+          .toISOString()
+          .slice(0, 10),
+        endDate: new Date().toISOString().slice(0, 10),
+      });
+      if (json.error) {
+        return {
+          provider: 'tiingo',
+          status: 'error',
+          cached: false,
+          error: json.error,
+          meta: { retryable: json.retryable, status: json.status },
+        };
+      }
+      const points = (json || []).map((row: any) => ({
+        timestamp: row.date,
         open: row.open ?? null,
         high: row.high ?? null,
         low: row.low ?? null,
         close: row.close ?? null,
-        volume: row.volume ?? null
+        volume: row.volume ?? null,
       }));
+      const timeseries = TimeseriesDTO.parse({ symbol: request.symbol, interval: '1d', points });
+      return { provider: 'tiingo', status: 'ok', cached: false, timeseries, raw: json };
+    }
+
+    const json: any = await fetchJson(`/tiingo/daily/${request.symbol}`);
+    if (json.error) {
       return {
         provider: 'tiingo',
-        kind,
-        data: timeseriesSchema.parse({
-          symbol,
-          interval: '1d',
-          start: points[0]?.time || new Date().toISOString(),
-          end: points[points.length - 1]?.time || new Date().toISOString(),
-          points
-        }),
-        meta: baseMeta(request, status)
+        status: 'error',
+        cached: false,
+        error: json.error,
+        meta: { retryable: json.retryable, status: json.status },
       };
     }
-    const company: any = await fetchJson(`/tiingo/daily/${symbol}`);
+    const company = CompanyDTO.parse({
+      symbol: request.symbol,
+      name: json.name ?? null,
+      sector: json.sector ?? null,
+      industry: json.industry ?? null,
+      website: json.website ?? null,
+      description: json.description ?? null,
+    });
+    return { provider: 'tiingo', status: 'ok', cached: false, company, raw: json };
+  } catch (error) {
     return {
       provider: 'tiingo',
-      kind,
-      data: companySchema.parse({
-        symbol,
-        name: company.name ?? null,
-        exchange: company.exchangeCode ?? null,
-        industry: company.description ?? null,
-        website: company.weburl ?? null,
-        description: company.statement ?? null,
-        ceo: company.ceo ?? null,
-        headquarters: company.city ? `${company.city}, ${company.state || ''}`.trim() : null,
-        employees: company.employees ?? null
-      }),
-      meta: baseMeta(request, status)
+      status: 'error',
+      cached: false,
+      error: error instanceof Error ? error.message : 'Failed to normalise Tiingo payload',
     };
-  } catch (err: any) {
-    status = err?.status ?? 500;
-    return { provider: 'tiingo', kind, meta: baseMeta(request, status), error: { message: err?.message || 'tiingo error' } };
   }
-}
-
-function baseMeta(request: FeedRequest, status: number) {
-  return {
-    cache: 'network' as const,
-    cached: false,
-    key: `${request.provider}:${request.kind}:${request.symbol}`,
-    requestedAt: new Date().toISOString(),
-    latencyMs: 0,
-    status
-  };
 }

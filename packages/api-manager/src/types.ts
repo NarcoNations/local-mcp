@@ -1,55 +1,80 @@
-import type { CompanyDTO, QuoteDTO, TimeseriesDTO } from './dto';
+import { z } from 'zod';
 
-export type FeedProvider = 'alphaVantage' | 'finnhub' | 'tiingo' | 'polygon';
-export type FeedKind = 'quote' | 'timeseries' | 'company';
+export const QuoteDTO = z.object({
+  symbol: z.string(),
+  price: z.number().nullable(),
+  open: z.number().nullable(),
+  high: z.number().nullable(),
+  low: z.number().nullable(),
+  previousClose: z.number().nullable(),
+  change: z.number().nullable(),
+  changePercent: z.number().nullable(),
+  currency: z.string().nullable().default('USD'),
+  timestamp: z.string(),
+});
+
+export const TimeseriesPointDTO = z.object({
+  timestamp: z.string(),
+  open: z.number().nullable(),
+  high: z.number().nullable(),
+  low: z.number().nullable(),
+  close: z.number().nullable(),
+  volume: z.number().nullable(),
+});
+
+export const TimeseriesDTO = z.object({
+  symbol: z.string(),
+  interval: z.string().default('1d'),
+  points: z.array(TimeseriesPointDTO),
+});
+
+export const CompanyDTO = z.object({
+  symbol: z.string(),
+  name: z.string().nullable(),
+  sector: z.string().nullable(),
+  industry: z.string().nullable(),
+  website: z.string().url().nullable().or(z.literal('')).transform((val) => (val === '' ? null : val)),
+  description: z.string().nullable(),
+});
+
+export type Quote = z.infer<typeof QuoteDTO>;
+export type Timeseries = z.infer<typeof TimeseriesDTO>;
+export type Company = z.infer<typeof CompanyDTO>;
+
+export type FeedProvider = 'alpha-vantage' | 'finnhub' | 'tiingo';
 
 export type FeedRequest = {
   provider: FeedProvider;
-  kind: FeedKind;
   symbol: string;
-  interval?: '1d' | '1w' | '1m' | '3m';
+  resource: 'quote' | 'timeseries' | 'company';
+  interval?: string;
   range?: string;
 };
 
-export type FeedOptions = {
-  ttlMs?: number;
-  cacheKeyPrefix?: string;
-  supabase?: { url: string; serviceKey: string } | null;
-  maxEntries?: number;
-};
-
-export type FeedData = QuoteDTO | TimeseriesDTO | CompanyDTO;
-
-export type FeedResult<T = FeedData> = {
+export type FeedResponse = {
+  quote?: Quote;
+  timeseries?: Timeseries;
+  company?: Company;
+  raw?: unknown;
   provider: FeedProvider;
-  kind: FeedKind;
-  data?: T;
-  meta: {
-    cache: 'memory' | 'supabase' | 'network' | 'none';
-    cached: boolean;
-    key: string;
-    requestedAt: string;
-    latencyMs: number;
-    status: number;
-  };
-  error?: { message: string; details?: unknown };
+  cached: boolean;
+  cacheSource?: 'memory' | 'supabase';
+  status: 'ok' | 'error';
+  error?: string;
+  meta?: Record<string, unknown>;
 };
 
-export type LLMTask = 'draft_copy' | 'summarize' | 'classify' | 'plan' | 'narrative' | 'analysis';
-export type LLMRun = { task: LLMTask; prompt: string; modelHint?: string; metadata?: Record<string, unknown> };
+export type LLMTask =
+  | 'draft_copy'
+  | 'summarize'
+  | 'classify'
+  | 'research_plan'
+  | 'narrative_draft'
+  | 'code_review';
 
-export type LLMResult = {
+export type LLMRun = {
   task: LLMTask;
-  model: string;
-  output?: string;
-  ok: boolean;
-  costEstimate: number;
-  latencyMs: number;
-  promptHash: string;
-  policy: {
-    chosen: string;
-    attempted: string[];
-    fallbackUsed: boolean;
-  };
-  error?: string;
+  prompt: string;
+  modelHint?: string;
+  metadata?: Record<string, unknown>;
 };

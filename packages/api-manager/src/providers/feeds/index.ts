@@ -1,97 +1,119 @@
-import { performance } from 'node:perf_hooks';
-import { LRUCache } from '../../cache';
-import type { FeedOptions, FeedRequest, FeedResult } from '../../types';
-import { readSupabaseCache, writeSupabaseCache } from '../../utils';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { MemoryCache } from '../../cache';
+import type { FeedRequest, FeedResponse } from '../../types';
 import { fetchAlphaVantage } from './alphaVantage';
 import { fetchFinnhub } from './finnhub';
 import { fetchTiingo } from './tiingo';
-import { fetchPolygon } from './polygon';
 
-let memoryCache = new LRUCache<FeedResult>();
-let memoryCacheMax = 150;
+const memoryCache = new MemoryCache<FeedResponse>();
 
-const providers = {
-  alphaVantage: fetchAlphaVantage,
+type FetchOptions = {
+  supabase?: SupabaseClient;
+  ttlMs?: number;
+};
+
+type ProviderHandler = (request: FeedRequest) => Promise<FeedResponse>;
+
+const handlers: Record<string, ProviderHandler> = {
+  'alpha-vantage': fetchAlphaVantage,
   finnhub: fetchFinnhub,
   tiingo: fetchTiingo,
-  polygon: fetchPolygon
-} as const;
+};
 
-export async function fetchFeed(request: FeedRequest, options: FeedOptions = {}): Promise<FeedResult> {
-  const providerFn = providers[request.provider];
-  if (!providerFn) {
+export async function fetchFeed(
+  request: FeedRequest,
+  options: FetchOptions = {}
+): Promise<FeedResponse> {
+  const provider = request.provider;
+  if (provider === 'polygon') {
     return {
-      provider: request.provider,
-      kind: request.kind,
-      meta: {
-        cache: 'none',
-        cached: false,
-        key: `${request.provider}:${request.kind}:${request.symbol}`,
-        requestedAt: new Date().toISOString(),
-        latencyMs: 0,
-        status: 400
-      },
-      error: { message: 'Unsupported provider' }
+      provider: provider as FeedResponse['provider'],
+      status: 'error',
+      cached: false,
+      error: 'Polygon is not available on the free tier. Please upgrade your plan.',
     };
+  }
+  const handler = handlers[provider];
+  if (!handler) {
+    return {
+      provider: provider as FeedResponse['provider'],
+      status: 'error',
+      cached: false,
+      error: `Unsupported provider: ${provider}`,
+    };
+  }
+
+  const cacheKey = MemoryCache.createKey(provider, request);
+  const cached = memoryCache.get(cacheKey);
+  if (cached) {
+    return { ...cached, cached: true, cacheSource: 'memory' };
   }
 
   const ttl = options.ttlMs ?? 60_000;
-  const desiredMax = options.maxEntries ?? memoryCacheMax;
-  if (desiredMax !== memoryCacheMax) {
-    memoryCache = new LRUCache<FeedResult>(desiredMax, ttl);
-    memoryCacheMax = desiredMax;
+  const supabase = options.supabase;
+  if (supabase) {
+    try {
+      const { data } = await supabase
+        .from('api_cache')
+        .select('payload, ts')
+        .eq('cache_key', cacheKey)
+        .eq('provider', provider)
+        .maybeSingle();
+      if (data) {
+        const age = Date.now() - new Date(data.ts as string).getTime();
+        if (age < ttl) {
+          const payload = data.payload as FeedResponse;
+          memoryCache.set(cacheKey, payload);
+          return { ...payload, cached: true, cacheSource: 'supabase' };
+        }
+      }
+    } catch (error) {
+      console.warn('[api-manager] failed to read Supabase cache', error);
+    }
   }
-  const key = [options.cacheKeyPrefix ?? 'feed', request.provider, request.kind, request.symbol, request.interval ?? '', request.range ?? '']
-    .filter(Boolean)
-    .join('::');
 
-  const cached = memoryCache.get(key);
-  if (cached) {
+  try {
+    const response = await fetchWithBackoff(() => handler(request));
+    memoryCache.set(cacheKey, response);
+    if (supabase) {
+      supabase
+        .from('api_cache')
+        .upsert({
+          cache_key: cacheKey,
+          provider,
+          payload: response,
+          ts: new Date().toISOString(),
+        })
+        .catch((error) => console.warn('[api-manager] failed to persist cache', error));
+    }
+    return response;
+  } catch (error) {
     return {
-      ...cached,
-      meta: { ...cached.meta, cache: 'memory', cached: true, key, latencyMs: 0 }
+      provider: provider as FeedResponse['provider'],
+      status: 'error',
+      cached: false,
+      error: error instanceof Error ? error.message : 'Unknown feed error',
     };
   }
-
-  const supabaseConfig = options.supabase ?? inferSupabase();
-  if (supabaseConfig) {
-    const cachedSupabase = await readSupabaseCache(supabaseConfig, request.provider, key);
-    if (cachedSupabase) {
-      const meta = {
-        cache: 'supabase' as const,
-        cached: true,
-        key,
-        requestedAt: new Date().toISOString(),
-        latencyMs: 0,
-        status: Number(cachedSupabase?.meta?.status ?? 200)
-      };
-      const result: FeedResult = { provider: request.provider, kind: request.kind, data: cachedSupabase.data, meta };
-      memoryCache.set(key, result, ttl);
-      return result;
-    }
-  }
-
-  const start = performance.now();
-  const result = await providerFn(request);
-  const latencyMs = Math.round(performance.now() - start);
-  const hydrated: FeedResult = {
-    ...result,
-    meta: { ...result.meta, cache: result.meta.cache ?? 'network', cached: false, key, latencyMs }
-  };
-
-  if (!hydrated.error && hydrated.data) {
-    memoryCache.set(key, hydrated, ttl);
-    if (supabaseConfig) {
-      await writeSupabaseCache(supabaseConfig, request.provider, key, { data: hydrated.data, meta: hydrated.meta }, hydrated.meta.status);
-    }
-  }
-
-  return hydrated;
 }
 
-function inferSupabase(): FeedOptions['supabase'] {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (url && key) return { url, serviceKey: key };
-  return null;
+async function fetchWithBackoff(fn: () => Promise<FeedResponse>) {
+  const maxAttempts = 3;
+  let attempt = 0;
+  let delay = 500;
+  while (attempt < maxAttempts) {
+    try {
+      const result = await fn();
+      if (result.status === 'error' && result.meta?.retryable) {
+        throw new Error(result.error || 'retryable error');
+      }
+      return result;
+    } catch (error: any) {
+      attempt += 1;
+      if (attempt >= maxAttempts) throw error;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      delay *= 2;
+    }
+  }
+  throw new Error('Exceeded retry attempts');
 }

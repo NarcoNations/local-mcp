@@ -1,36 +1,44 @@
-export type CacheEntry<T> = { value: T; expiresAt: number };
+import crypto from 'crypto';
 
-export class LRUCache<T> {
-  private store = new Map<string, CacheEntry<T>>();
-  constructor(private readonly maxEntries = 150, private readonly ttlMs = 60_000) {}
+type CacheEntry<T> = {
+  value: T;
+  expiresAt: number;
+};
 
-  get(key: string): T | undefined {
-    const entry = this.store.get(key);
-    if (!entry) return undefined;
-    if (entry.expiresAt < Date.now()) {
-      this.store.delete(key);
-      return undefined;
+export type CacheConfig = {
+  ttlMs?: number;
+  maxEntries?: number;
+};
+
+export class MemoryCache<T> {
+  private map = new Map<string, CacheEntry<T>>();
+  private ttlMs: number;
+  private maxEntries: number;
+
+  constructor(config?: CacheConfig) {
+    this.ttlMs = config?.ttlMs ?? 60_000;
+    this.maxEntries = config?.maxEntries ?? 200;
+  }
+
+  get(key: string) {
+    const entry = this.map.get(key);
+    if (!entry) return null;
+    if (Date.now() > entry.expiresAt) {
+      this.map.delete(key);
+      return null;
     }
-    this.store.delete(key);
-    this.store.set(key, entry);
     return entry.value;
   }
 
-  set(key: string, value: T, ttlMs = this.ttlMs) {
-    const expiresAt = Date.now() + ttlMs;
-    if (this.store.has(key)) this.store.delete(key);
-    this.store.set(key, { value, expiresAt });
-    this.prune();
+  set(key: string, value: T) {
+    if (this.map.size >= this.maxEntries) {
+      const firstKey = this.map.keys().next().value as string | undefined;
+      if (firstKey) this.map.delete(firstKey);
+    }
+    this.map.set(key, { value, expiresAt: Date.now() + this.ttlMs });
   }
 
-  private prune() {
-    if (this.store.size <= this.maxEntries) return;
-    const extra = this.store.size - this.maxEntries;
-    const keys = this.store.keys();
-    for (let i = 0; i < extra; i += 1) {
-      const next = keys.next();
-      if (next.done) break;
-      this.store.delete(next.value);
-    }
+  static createKey(provider: string, payload: unknown) {
+    return `${provider}:${crypto.createHash('sha1').update(JSON.stringify(payload)).digest('hex')}`;
   }
 }
