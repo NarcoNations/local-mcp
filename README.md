@@ -186,7 +186,55 @@ Vitest covers chunking, hybrid storage, PDF OCR fallback (mocked), and ChatGPT c
 
 ## Vercel deployment
 
-`vercel.json` is configured to run `npm run build` and publish `dist/` (which now contains static docs alongside compiled JS). The build avoids native dependencies, making the project safe for Vercel preview builds.
+The repository ships with a serverless-friendly Express bridge that can run on Vercel via a single Node.js function (`api/http.ts`). The function reuses the compiled HTTP bridge (`dist/src/http.js`) and exposes all SSE + REST endpoints behind Vercel rewrites.
+
+### Prerequisites
+
+- Vercel CLI (`npm install -g vercel`) and an authenticated project (`vercel login`, `vercel link`).
+- Build output generated locally so the serverless handler can import the compiled bridge: `npm run build`.
+- Optional environment variables (set with `vercel env` or in the dashboard):
+  - `MCP_ALLOW_ORIGINS` – comma-delimited list of origins allowed to hit the HTTP bridge. Defaults to `*` during development.
+  - `MCP_ALLOWED_HOSTS` – allow-list for DNS-rebinding protection on SSE connections.
+  - `MCP_ALLOWED_ORIGINS` – allow-list for DNS-rebinding protection on SSE connections.
+  - `MCP_ENABLE_DNS_REBINDING` – set to `1` to enable anti-rebinding checks.
+
+### Deploy
+
+```bash
+npm install
+npm run build
+vercel deploy           # preview
+vercel deploy --prod    # production
+```
+
+The supplied `vercel.json`:
+
+- Runs `npm run build` before bundling functions.
+- Routes `/mcp/*`, `/api/*`, `/health`, `/mcp.json`, and any remaining paths through the Node serverless function (`api/http.ts`).
+- Sets the Node.js 20 runtime and increases the execution window to 60 s so SSE handshakes succeed.
+
+### Local verification with Vercel CLI
+
+After running `npm run build`, launch the bridge with Vercel's emulator:
+
+```bash
+npx vercel dev --listen 0.0.0.0:3030
+```
+
+Then hit the SSE endpoints from another shell:
+
+```bash
+curl -N http://localhost:3030/mcp/sse
+curl -N http://localhost:3030/api/logs/stream
+```
+
+You should see the initial `http-listening` entry streamed to the client. Terminate with `Ctrl+C` when finished.
+
+### Known limitations on Vercel
+
+- **Connection lifetime** – even with the extended 60 s window, Vercel serverless functions can recycle workers, so long-lived SSE sessions may be terminated periodically. The client should implement reconnection logic.
+- **Stateful tool sessions** – the `/mcp/messages` REST calls and the SSE transport share in-memory state. Vercel attempts to reuse the same function instance for subsequent requests, but there is no strict guarantee; occasional "Unknown session" errors are possible under load.
+- **No WebSocket upgrades** – only SSE is supported by the current hosting plan. Use a dedicated VM or container host if you need WebSockets or unlimited streaming windows.
 
 ## Styling & conventions
 

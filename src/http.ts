@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import express, { Request, Response } from "express";
 import cors from "cors";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -87,7 +88,7 @@ function getSessionId(req: Request): string | undefined {
   return queryId;
 }
 
-async function main() {
+async function buildHttpApp() {
   const config = await loadConfig();
   const httpToolkit = createToolKit(config, {
     onWatchEvent: (event) => {
@@ -318,26 +319,62 @@ async function main() {
   const staticInfo = resolveStaticDir();
   if (staticInfo) {
     app.use(express.static(staticInfo.root, { index: false, fallthrough: true }));
-    app.get("*", (req, res, next) => {
-      if (req.path.startsWith("/api") || req.path.startsWith("/mcp")) {
-        next();
-        return;
-      }
+    app.get(/^(?!\/api|\/mcp).*/, (_req, res) => {
       res.sendFile(staticInfo.index);
     });
   }
 
-  const port = Number(process.env.HTTP_PORT ?? process.env.PORT ?? 3030);
-  const host = process.env.HOST ?? "0.0.0.0";
+  app.locals.staticRoot = staticInfo?.root;
 
-  app.listen(port, host, () => {
-    logger.info("http-listening", { port, host, staticRoot: staticInfo?.root });
-    pushLog("info", "http-listening", { port, host, staticRoot: staticInfo?.root });
-  });
+  return app;
 }
 
-main().catch((err) => {
-  logger.error("http-startup-failed", { err: String(err) });
-  pushLog("error", "http-startup-failed", { error: String(err) });
-  process.exit(1);
-});
+let appPromise: Promise<express.Express> | null = null;
+
+export async function getHttpApp(): Promise<express.Express> {
+  if (!appPromise) {
+    appPromise = buildHttpApp().catch((error) => {
+      appPromise = null;
+      throw error;
+    });
+  }
+  return appPromise;
+}
+
+export async function startHttpServer(): Promise<void> {
+  try {
+    const app = await getHttpApp();
+    const port = Number(process.env.HTTP_PORT ?? process.env.PORT ?? 3030);
+    const host = process.env.HOST ?? "0.0.0.0";
+
+    const staticRoot = app.locals?.staticRoot as string | undefined;
+
+    await new Promise<void>((resolve) => {
+      app.listen(port, host, () => {
+        logger.info("http-listening", { port, host, staticRoot });
+        pushLog("info", "http-listening", { port, host, staticRoot });
+        resolve();
+      });
+    });
+  } catch (err) {
+    logger.error("http-startup-failed", { err: String(err) });
+    pushLog("error", "http-startup-failed", { error: String(err) });
+    throw err;
+  }
+}
+
+const isExecutedDirectly = (() => {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  try {
+    return import.meta.url === pathToFileURL(entry).href;
+  } catch {
+    return false;
+  }
+})();
+
+if (isExecutedDirectly) {
+  startHttpServer().catch(() => {
+    process.exit(1);
+  });
+}
