@@ -10,6 +10,6 @@
     "strict": true,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "src/types/**/*.d.ts", "tests/**/*.ts"],
+  "include": ["src/**/*.ts", "src/types/**/*.d.ts", "supabase/**/*.ts", "tests/**/*.ts"],
   "ts-node": { "esm": true }
 }
