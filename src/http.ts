@@ -9,6 +9,7 @@ import { loadConfig } from "./config.js";
 import { logger } from "./utils/logger.js";
 import { createToolKit, registerMcpTools } from "./mcp/toolkit.js";
 import { ZodError } from "zod";
+import { runAlphaFeed, runLlmRouter } from "./lib/api-manager.js";
 
 const SERVER_INFO = {
   name: "mcp-nn",
@@ -277,6 +278,32 @@ async function main() {
         success: "import-completed",
         error: "import-failed",
         meta: { outDir: req.body?.outDir },
+      }
+    );
+  });
+
+  app.get("/api/feeds/alpha", async (req, res) => {
+    const fn = typeof req.query.fn === "string" ? req.query.fn : "TIME_SERIES_DAILY";
+    const symbol = typeof req.query.symbol === "string" ? req.query.symbol : "SPY";
+    await respond(
+      res,
+      () => runAlphaFeed({ fn, symbol }),
+      {
+        success: "feed-fetched",
+        error: "feed-failed",
+        meta: { fn, symbol },
+      }
+    );
+  });
+
+  app.post("/api/llm", async (req, res) => {
+    await respond(
+      res,
+      () => runLlmRouter(req.body),
+      {
+        success: "llm-run-completed",
+        error: "llm-run-failed",
+        meta: { task: req.body?.task, modelHint: req.body?.modelHint },
       }
     );
   });

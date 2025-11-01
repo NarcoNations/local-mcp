@@ -134,7 +134,9 @@ export default function ApiManagerPage() {
 const mainStyle: CSSProperties = {
   display: 'grid',
   gap: '24px',
-  padding: '24px 0'
+  width: 'min(960px, 100%)',
+  margin: '0 auto',
+  padding: '24px clamp(16px, 5vw, 48px)'
 };
 
 const cardStyle: CSSProperties = {
@@ -144,7 +146,8 @@ const cardStyle: CSSProperties = {
   boxShadow: '0 12px 32px rgba(15,23,42,0.08)',
   display: 'flex',
   flexDirection: 'column',
-  gap: '16px'
+  gap: '16px',
+  width: '100%'
 };
 
 const titleStyle: CSSProperties = {
@@ -202,7 +205,8 @@ const buttonStyle: CSSProperties = {
   background: 'rgba(37,99,235,0.85)',
   color: 'white',
   fontWeight: 600,
-  cursor: 'pointer'
+  cursor: 'pointer',
+  alignSelf: 'flex-start'
 };
 
 const preStyle: CSSProperties = {
@@ -210,7 +214,7 @@ const preStyle: CSSProperties = {
   borderRadius: '12px',
   padding: '16px',
   margin: 0,
-  maxHeight: '320px',
+  maxHeight: 'min(360px, 60vh)',
   overflow: 'auto',
   fontSize: '0.85rem',
   lineHeight: 1.5

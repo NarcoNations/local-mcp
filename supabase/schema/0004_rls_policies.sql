@@ -80,3 +80,37 @@ create policy if not exists purchase_orders_service_write on purchase_orders for
 -- create policy if not exists knowledge_read on knowledge for select using (auth.role() in ('authenticated','service_role'));
 -- create policy if not exists knowledge_service_write on knowledge for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
 
+alter table if exists knowledge_sources enable row level security;
+alter table if exists knowledge_documents enable row level security;
+alter table if exists knowledge_chunks enable row level security;
+alter table if exists knowledge_manifests enable row level security;
+
+create policy if not exists knowledge_sources_read on knowledge_sources for select using (auth.role() in ('authenticated','service_role'));
+create policy if not exists knowledge_sources_service_write on knowledge_sources for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+create policy if not exists knowledge_documents_read on knowledge_documents for select using (auth.role() in ('authenticated','service_role'));
+create policy if not exists knowledge_documents_service_write on knowledge_documents for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+create policy if not exists knowledge_chunks_read on knowledge_chunks for select using (auth.role() in ('authenticated','service_role'));
+create policy if not exists knowledge_chunks_service_write on knowledge_chunks for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+create policy if not exists knowledge_manifests_read on knowledge_manifests for select using (auth.role() in ('authenticated','service_role'));
+create policy if not exists knowledge_manifests_service_write on knowledge_manifests for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+alter table if exists api_cache enable row level security;
+alter table if exists api_providers enable row level security;
+alter table if exists prompt_templates enable row level security;
+alter table if exists prompt_runs enable row level security;
+
+create policy if not exists api_cache_read on api_cache for select using (auth.role() in ('authenticated','service_role'));
+create policy if not exists api_cache_service_write on api_cache for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+create policy if not exists api_providers_read on api_providers for select using (auth.role() in ('authenticated','service_role'));
+create policy if not exists api_providers_service_write on api_providers for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+create policy if not exists prompt_templates_read on prompt_templates for select using (auth.role() in ('authenticated','service_role'));
+create policy if not exists prompt_templates_service_write on prompt_templates for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+create policy if not exists prompt_runs_read on prompt_runs for select using (auth.role() in ('authenticated','service_role'));
+create policy if not exists prompt_runs_service_write on prompt_runs for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+

@@ -13,6 +13,7 @@ import { indexMarkdown } from "../indexers/markdown.js";
 import { indexText } from "../indexers/text.js";
 import { indexWord } from "../indexers/word.js";
 import { indexPages } from "../indexers/pages.js";
+import { SupabaseSync } from "./storage-supabase.js";
 
 export interface ReindexStats {
   indexed: number;
@@ -44,12 +45,14 @@ export class KnowledgeStore {
   private fileToChunks = new Map<string, string[]>();
   private vectorIndex: FlatVectorIndex;
   private keywordIndex = new KeywordIndex();
+  private supabaseSync: SupabaseSync;
 
   constructor(private config: AppConfig) {
     const dataDir = path.resolve(process.cwd(), config.out.dataDir);
     this.chunkPath = path.join(dataDir, CHUNKS_FILE);
     this.manifestPath = path.join(dataDir, MANIFEST_FILE);
     this.vectorIndex = new FlatVectorIndex(dataDir);
+    this.supabaseSync = new SupabaseSync();
   }
 
   async load(): Promise<void> {
@@ -176,6 +179,10 @@ export class KnowledgeStore {
 
     await this.persistChunks();
     await this.persistManifest();
+
+    if (this.supabaseSync.enabled) {
+      await this.supabaseSync.sync(this.manifest, this.chunks, embeddings);
+    }
 
     return stats;
   }

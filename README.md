@@ -141,6 +141,36 @@ Environment overrides:
 
 `npm run clean` removes `.mcp-nn` and `dist`.
 
+### Optional: Supabase sync
+
+Mirror the local knowledge store into Supabase by enabling the sync bridge:
+
+```bash
+export SUPABASE_SYNC=true
+export SUPABASE_URL="https://xyzcompany.supabase.co"
+export SUPABASE_SERVICE_ROLE_KEY="..."
+# optional: customise naming + retention
+export SUPABASE_KNOWLEDGE_SLUG=narconations-mcp
+export SUPABASE_KNOWLEDGE_TITLE="NarcoNations MCP"
+export SUPABASE_MANIFEST_RETENTION=10
+```
+
+Run `npm run index` (or `npm run watch`) and every reindex pushes metadata + embeddings into:
+
+- `knowledge_sources` (one row per corpus)
+- `knowledge_documents` (one row per file)
+- `knowledge_chunks` (pgvector rows with embeddings)
+- `knowledge_manifests` (rolling manifest snapshots)
+
+The SQL stubs live in `supabase/schema/0006_knowledge_embeddings.sql`. Adjust RLS policies in `0004` once you add org ownership columns.
+Use a service-role key for writes; the bridge falls back to `SUPABASE_SERVICE_KEY` or `SUPABASE_ANON_KEY` for local testing only.
+
+### API manager + LLM bridge env
+
+- `ALPHA_VANTAGE_KEY` – required for `/api/feeds/alpha`
+- `OPENAI_API_KEY` (and optional `OPENAI_MODEL_HINT`) – used by `/api/llm`
+- `API_CACHE_TTL_SECONDS` – override in-memory + Supabase cache TTL (default 60)
+
 ## File type coverage
 
 - **PDF** via `pdf-parse`. Low-density pages automatically render the sheet to an in-memory canvas and run offline `tesseract.js` OCR (requires the optional `canvas` native dependency). If OCR cannot run, the file is still indexed with `partial:true` so you can address it later.
