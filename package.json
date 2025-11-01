@@ -9,7 +9,7 @@
     "test:ci": "npm run test:unit && npm run test:e2e",
     "dev": "concurrently -n mcp,http -c blue,green \"tsx src/server.ts\" \"tsx src/http.ts\"",
     "start": "node --enable-source-maps dist/http.js",
-    "build": "tsc -p tsconfig.json && node scripts/copy-static.mjs",
+    "build": "rimraf dist && tsc -p tsconfig.build.json && node scripts/copy-static.mjs",
     "index": "ts-node src/cli-index.ts",
     "watch": "ts-node src/cli-watch.ts",
     "models:download": "node scripts/prefetch-model.mjs",
@@ -20,7 +20,8 @@
     "chatgpt:quickstart": "npm run chatgpt:to-md -- ~/Downloads/chatgpt-export && npm run index -- ./docs/chatgpt-export-md",
     "dev:mcp": "tsx src/server.ts",
     "dev:http": "tsx src/http.ts",
-    "start:mcp": "node --enable-source-maps dist/server.js"
+    "start:mcp": "node --enable-source-maps dist/server.js",
+    "vercel-build": "npm run build"
   },
   "keywords": [],
   "author": "",
