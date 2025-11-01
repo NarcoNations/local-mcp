@@ -1,3 +1,26 @@
+import './globals.css';
+import type { Metadata } from 'next';
+import { clsx } from 'clsx';
+import Link from 'next/link';
+import { twMerge } from 'tailwind-merge';
+
+export const metadata: Metadata = {
+  title: 'VibeOS Ultimate Dashboard',
+  description: 'Narco Nations × VibeLabz — adaptive operating system shell built for strategy, research, and creation.'
+};
+
+const navLinks = [
+  { href: '/', label: 'Overview' },
+  { href: '/timeline', label: 'Historian' },
+  { href: '/metrics', label: 'Metrics' },
+  { href: '/library/prompts', label: 'Prompt Library' },
+  { href: '/research', label: 'Research' },
+  { href: '/search', label: 'Search' },
+  { href: '/play/map', label: 'Map' },
+  { href: '/play/social', label: 'Social Lab' },
+  { href: '/api-manager', label: 'API Feeds' }
+];
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
@@ -44,3 +67,40 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+
+const headerStyle: CSSProperties = {
+  position: 'sticky',
+  top: 0,
+  zIndex: 10,
+  width: '100%',
+  background: 'rgba(255,255,255,0.95)',
+  backdropFilter: 'blur(12px)',
+  borderBottom: '1px solid rgba(15,23,42,0.08)',
+  padding: '12px 20px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '12px'
+};
+
+const brandStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column'
+};
+
+const navStyle: CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '8px',
+  alignItems: 'center'
+};
+
+const navLinkStyle: CSSProperties = {
+  padding: '6px 12px',
+  borderRadius: '999px',
+  background: 'rgba(15,23,42,0.08)',
+  fontSize: '0.9rem',
+  fontWeight: 600,
+  transition: 'background 0.2s ease',
+  display: 'inline-flex',
+  alignItems: 'center'
+};

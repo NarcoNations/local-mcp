@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system;
+  --tone-surface: 228 32% 6%;
+  --tone-surface-muted: 228 28% 10%;
+  --tone-surface-strong: 227 55% 12%;
+  --tone-text: 220 33% 96%;
+  --tone-text-muted: 220 17% 72%;
+  --tone-border: 225 35% 20%;
+  --tone-accent: 272 92% 66%;
+  --tone-accent-soft: 272 92% 70%;
+  --tone-positive: 155 70% 55%;
+  --tone-caution: 43 100% 56%;
+  --tone-critical: 0 84% 62%;
+  --radius-md: 14px;
+  --shadow-soft: 0 24px 48px -32px hsl(228 56% 8% / 0.6);
+  --grid-gap: clamp(1rem, 0.8vw + 1rem, 2.5rem);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --tone-surface: 210 38% 96%;
+    --tone-surface-muted: 220 25% 92%;
+    --tone-surface-strong: 220 30% 88%;
+    --tone-text: 228 32% 10%;
+    --tone-text-muted: 227 15% 42%;
+    --tone-border: 220 18% 78%;
+    --tone-accent: 252 84% 62%;
+    --tone-accent-soft: 252 84% 72%;
+    --tone-positive: 155 60% 42%;
+    --tone-caution: 34 96% 52%;
+    --tone-critical: 0 82% 56%;
+  }
+}
+
+* {
+  @apply border-border;
+}
+
+body {
+  @apply bg-surface text-text font-sans antialiased;
+  min-height: 100vh;
+  background-image: radial-gradient(circle at top, hsl(var(--tone-surface-strong) / 0.32), transparent 45%),
+    radial-gradient(circle at bottom, hsl(var(--tone-accent) / 0.09), transparent 60%);
+}
+
+a {
+  @apply text-accent underline-offset-4 transition-colors duration-200 ease-out;
+}
+
+a:hover, a:focus-visible {
+  @apply text-accentSoft;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid hsl(var(--tone-accent));
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

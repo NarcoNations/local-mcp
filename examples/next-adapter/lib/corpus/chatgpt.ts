@@ -4,7 +4,7 @@ import os from 'node:os';
 import { chain } from 'stream-chain';
 import { parser } from 'stream-json';
 import { streamArray } from 'stream-json/streamers/StreamArray';
-import { sbServer } from '@/examples/next-adapter/lib/supabase/server';
+import { sbServer } from '@/lib/supabase/server';
 
 export async function processChatExportFromUrl(fileUrl: string) {
   const tmp = path.join(os.tmpdir(), 'chat-export-' + Date.now() + '.json');
