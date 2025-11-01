@@ -179,10 +179,17 @@ Chunks use deterministic UUIDv5 IDs (path, page, offset) for stable reindexing.
 ## Tests
 
 ```bash
+# Unit + integration (Vitest)
 npm test
+
+# Playwright E2E (first run installs browsers)
+npx playwright install --with-deps chromium
+npm run test:e2e
 ```
 
-Vitest covers chunking, hybrid storage, PDF OCR fallback (mocked), and ChatGPT conversion smoke tests.
+- Vitest now includes integration suites for the HTTP bridge (`tests/integration/http.integration.test.ts`) and the knowledge store (`tests/integration/store.integration.test.ts`).
+- Playwright validates the Control Room UI across mobile and large-screen breakpoints (`tests/e2e/control-room.spec.ts`).
+- A high-level audit of remaining gaps lives in [`docs/testing/coverage.md`](docs/testing/coverage.md).
 
 ## Vercel deployment
 
