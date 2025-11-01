@@ -24,6 +24,8 @@ import {
   ImportChatGPTSchema,
   ImportChatGPTShape,
 } from "../tools/importChatGPT.js";
+import type { ApiManager } from "@vibelabz/api-manager";
+import { createRunLLMTool, LLMRunSchema, LLMRunShape } from "../tools/llm.js";
 
 export interface ToolKit {
   searchLocal: ReturnType<typeof createSearchLocalTool>;
@@ -32,11 +34,13 @@ export interface ToolKit {
   watch: ReturnType<typeof createWatchTool>;
   stats: ReturnType<typeof createStatsTool>;
   importChatGPT: ReturnType<typeof createImportChatGPTTool>;
+  runLLM?: ReturnType<typeof createRunLLMTool>;
 }
 
 export interface ToolKitOptions {
   server?: McpServer;
   onWatchEvent?: (event: Record<string, unknown>, extra?: Record<string, unknown>) => void;
+  apiManager?: ApiManager;
 }
 
 export function createToolKit(config: AppConfig, options?: ToolKitOptions): ToolKit {
@@ -53,7 +57,8 @@ export function createToolKit(config: AppConfig, options?: ToolKitOptions): Tool
       .catch((err) => logger.warn("watch-notify-failed", { err: String(err) }));
   });
   const importChatGPT = createImportChatGPTTool(config);
-  return { searchLocal, getDoc, reindex, watch, stats, importChatGPT };
+  const llm = options?.apiManager ? createRunLLMTool(options.apiManager) : undefined;
+  return { searchLocal, getDoc, reindex, watch, stats, importChatGPT, runLLM: llm };
 }
 
 export function registerMcpTools(server: McpServer, toolkit: ToolKit): void {
@@ -188,4 +193,30 @@ export function registerMcpTools(server: McpServer, toolkit: ToolKit): void {
       };
     }
   );
+
+  if (toolkit.runLLM) {
+    server.registerTool(
+      "run_llm",
+      {
+        title: "Run routed LLM",
+        description: "Execute an LLM task through the configured provider policy and return the response.",
+        inputSchema: LLMRunShape,
+        annotations: { readOnlyHint: false, title: "Run LLM" },
+      },
+      async (args: unknown) => {
+        const parsed = LLMRunSchema.parse(args);
+        const result = await toolkit.runLLM!(parsed);
+        const structured = JSON.parse(JSON.stringify(result)) as Record<string, unknown>;
+        return {
+          structuredContent: structured,
+          content: [
+            {
+              type: "text" as const,
+              text: result.output,
+            },
+          ],
+        };
+      }
+    );
+  }
 }

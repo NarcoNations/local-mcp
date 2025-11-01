@@ -6,7 +6,8 @@
     "test": "vitest run",
     "dev": "concurrently -n mcp,http -c blue,green \"tsx src/server.ts\" \"tsx src/http.ts\"",
     "start": "node --enable-source-maps dist/http.js",
-    "build": "tsc -p tsconfig.json && node scripts/copy-static.mjs",
+    "build": "npm run build:api-manager && tsc -p tsconfig.json && node scripts/copy-static.mjs",
+    "build:api-manager": "npm --prefix packages/api-manager run build",
     "index": "ts-node src/cli-index.ts",
     "watch": "ts-node src/cli-watch.ts",
     "models:download": "node scripts/prefetch-model.mjs",
@@ -33,6 +34,7 @@
   },
   "dependencies": {
     "@huggingface/jinja": "^0.5.1",
+    "@vibelabz/api-manager": "file:packages/api-manager",
     "@modelcontextprotocol/sdk": "^1.18.1",
     "@xenova/transformers": "^2.17.2",
     "cors": "^2.8.5",

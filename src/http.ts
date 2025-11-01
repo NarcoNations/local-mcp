@@ -9,6 +9,8 @@ import { loadConfig } from "./config.js";
 import { logger } from "./utils/logger.js";
 import { createToolKit, registerMcpTools } from "./mcp/toolkit.js";
 import { ZodError } from "zod";
+import { createRuntimeApiManager } from "./api/manager.js";
+import { LLMRunSchema } from "./tools/llm.js";
 
 const SERVER_INFO = {
   name: "mcp-nn",
@@ -89,10 +91,12 @@ function getSessionId(req: Request): string | undefined {
 
 async function main() {
   const config = await loadConfig();
+  const apiManager = createRuntimeApiManager(config);
   const httpToolkit = createToolKit(config, {
     onWatchEvent: (event) => {
       pushLog("info", "watch-event", event as Record<string, unknown>);
     },
+    apiManager,
   });
 
   const app = express();
@@ -120,6 +124,7 @@ async function main() {
       const toolkit = createToolKit(config, {
         server: sessionServer,
         onWatchEvent: (event) => pushLog("info", "watch-event", event as Record<string, unknown>),
+        apiManager,
       });
       registerMcpTools(sessionServer, toolkit);
 
@@ -213,6 +218,33 @@ async function main() {
       res.status(isValidation ? 400 : 500).json({ ok: false, error: message });
     }
   }
+
+  app.get("/api/llm/providers", async (_req, res) => {
+    await respond(
+      res,
+      async () => apiManager.listLLMProviders({ includeUnavailable: true }),
+      {
+        success: "llm-providers-loaded",
+        error: "llm-providers-failed",
+      }
+    );
+  });
+
+  app.post("/api/llm/run", async (req, res) => {
+    if (!httpToolkit.runLLM) {
+      res.status(503).json({ ok: false, error: "LLM routing not configured" });
+      return;
+    }
+    await respond(
+      res,
+      async () => httpToolkit.runLLM!(LLMRunSchema.parse(req.body)),
+      {
+        success: "llm-run-completed",
+        error: "llm-run-failed",
+        meta: { task: req.body?.task, provider: req.body?.providerId },
+      }
+    );
+  });
 
   app.post("/api/search", async (req, res) => {
     await respond(

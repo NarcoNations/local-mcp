@@ -34,6 +34,7 @@ The UI (served from <http://localhost:3030>) is fully responsive, mobile-first, 
 - Real-time index stats (files, chunks by type, embedding cache size, last indexed timestamp).
 - Maintenance actions: manual reindex, watcher activation, ChatGPT export import.
 - Live activity log streamed via SSE for visibility into reindexing, watch events, and bridge status.
+- LLM router dashboard showing provider availability, caching policy, and a routed playground.
 
 The UI is bundled into the Vercel-friendly build output (`npm run build`) and served by the HTTP bridge.
 
@@ -99,6 +100,7 @@ One-shot tool call:
 | `watch` | Watch directories via chokidar and trigger incremental reindexing. |
 | `stats` | Manifest summary (files, chunks, counts by type, embedding cache size). |
 | `import_chatgpt_export` | Convert ChatGPT exports to Markdown and reindex the output. |
+| `run_llm` | Route an LLM task through policy-driven provider selection + caching. |
 
 ## Configuration
 
@@ -122,7 +124,30 @@ After the first run a resolved config is written to `.mcp-nn/config.json`.
     "concurrency": 2,
     "languages": ["eng"]
   },
-  "out": { "dataDir": ".mcp-nn" }
+  "out": { "dataDir": ".mcp-nn" },
+  "providers": {
+    "llm": {
+      "defaultProvider": "openai",
+      "fallbackProvider": "local",
+      "cacheSeconds": 300,
+      "providers": [
+        {
+          "id": "openai",
+          "type": "openai",
+          "label": "OpenAI GPT-4o mini",
+          "apiKeyEnv": "OPENAI_API_KEY",
+          "models": ["gpt-4o-mini"]
+        },
+        {
+          "id": "local",
+          "type": "local",
+          "label": "Local Mock",
+          "defaultResponsePrefix": "[LOCAL MOCK]",
+          "models": ["mock-local"]
+        }
+      ]
+    }
+  }
 }
 ```
 
@@ -131,6 +156,9 @@ Environment overrides:
 - `MCP_NN_DATA_DIR` – change index storage directory.
 - `TRANSFORMERS_CACHE` – override Xenova model cache directory.
 - `TRANSFORMERS_OFFLINE=1` – enforce offline model loads.
+- `OPENAI_API_KEY` – unlock the hosted OpenAI provider adapter.
+- `MCP_DEFAULT_LLM_PROVIDER` / `MCP_FALLBACK_LLM_PROVIDER` – override routing defaults without editing config.
+- `MCP_LLM_CACHE_SECONDS` / `MCP_LLM_CACHE_MAX` – tweak LLM cache TTL + entry count.
 
 ## Data flow & storage
 

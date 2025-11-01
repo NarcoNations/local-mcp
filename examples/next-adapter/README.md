@@ -19,6 +19,16 @@ npm run dev
 - `INGEST_SUPABASE` = `true` to enable Supabase writes (optional)
 - `SUPABASE_URL` / `SUPABASE_ANON_KEY`
 - `SUPABASE_BUCKET_FILES` (default: `files`)
+- `NEXT_PUBLIC_MCP_HTTP_URL` base for the MCP HTTP bridge (default: same origin)
+
+## MCP API manager demo
+
+- Visit [`/api-manager`](http://localhost:3000/api-manager) to explore the **LLM router dashboard**.
+- The page calls the MCP HTTP bridge endpoints:
+  - `GET /api/llm/providers` — inventory of providers (local + hosted) with availability and models.
+  - `POST /api/llm/run` — run a task through the routing policy + cache.
+- Use metadata hints in the form (task, provider, model hint) to watch policy decisions update live.
+- On Vercel, point `NEXT_PUBLIC_MCP_HTTP_URL` to your deployed MCP bridge (e.g. `https://mcp.your-domain.com`).
 
 ## Notes
 - Uses `unzipit` to unpack the worker ZIP in-memory.
