@@ -179,10 +179,17 @@ Chunks use deterministic UUIDv5 IDs (path, page, offset) for stable reindexing.
 ## Tests
 
 ```bash
-npm test
+npx playwright install --with-deps  # one-time: fetch Playwright browsers
+npm test                            # runs Vitest + Playwright suites
 ```
 
-Vitest covers chunking, hybrid storage, PDF OCR fallback (mocked), and ChatGPT conversion smoke tests.
+`npm test` runs the Vitest unit/integration suite followed by Playwright end-to-end coverage. Highlights:
+
+- **HTTP bridge** – `tests/http.api.test.ts` exercises `/api/search`, `/api/doc`, `/api/stats`, `/api/reindex`, `/api/watch`, `/api/import`, `/api/logs`, and `/health`, asserting success + failure paths and structured logging.
+- **Knowledge store workflow** – `tests/store.reindex.test.ts` walks the Markdown reindex pipeline, verifies manifest/vector persistence, dedupes unchanged files, and confirms hybrid search accessors.
+- **Control room UI** – `tests/e2e/control-room.spec.ts` drives the responsive dashboard on desktop + mobile breakpoints, covering search expansion, stats refresh, maintenance forms, SSE log streaming, and layout constraints.
+
+Vitest continues to cover chunking, hybrid storage, PDF OCR fallback (mocked), and ChatGPT conversion smoke tests.
 
 ## Vercel deployment
 
