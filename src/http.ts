@@ -33,6 +33,7 @@ const sessions = new Map<string, SessionState>();
 const logSubscribers = new Set<Response>();
 const logs: LogEntry[] = [];
 const MAX_LOGS = 250;
+const watchTracker = new WatchTracker();
 
 function pushLog(level: LogEntry["level"], message: string, details?: Record<string, unknown>) {
   const entry: LogEntry = {
@@ -94,6 +95,7 @@ async function main() {
     onWatchEvent: (event) => {
       pushLog("info", "watch-event", event as Record<string, unknown>);
     },
+    watchTracker,
   });
 
   const app = express();
@@ -121,6 +123,7 @@ async function main() {
       const toolkit = createToolKit(config, {
         server: sessionServer,
         onWatchEvent: (event) => pushLog("info", "watch-event", event as Record<string, unknown>),
+        watchTracker,
       });
       registerMcpTools(sessionServer, toolkit);
 
@@ -133,6 +136,7 @@ async function main() {
 
       transport.onclose = () => {
         sessions.delete(transport!.sessionId);
+        watchTracker.stop(transport!.sessionId);
         pushLog("info", "sse-session-closed", { sessionId: transport!.sessionId });
         sessionServer.close().catch(() => {});
       };
@@ -151,6 +155,7 @@ async function main() {
       pushLog("error", "sse-connection-failed", { error: message });
       if (transport) {
         sessions.delete(transport.sessionId);
+        watchTracker.stop(transport.sessionId);
       }
       if (!res.headersSent) {
         res.status(500).json({ ok: false, error: message });
@@ -193,6 +198,7 @@ async function main() {
       return;
     }
     sessions.delete(sessionId);
+    watchTracker.stop(sessionId);
     await session.transport.close().catch(() => {});
     await session.server.close().catch(() => {});
     pushLog("info", "sse-session-closed", { sessionId });
@@ -244,6 +250,24 @@ async function main() {
       success: "stats-loaded",
       error: "stats-failed",
     });
+  });
+
+  app.get("/api/system", async (_req, res) => {
+    await respond(
+      res,
+      async () => {
+        const stats = await httpToolkit.stats();
+        return {
+          stats,
+          sessions: sessions.size,
+          watchers: watchTracker.list(),
+        };
+      },
+      {
+        success: "system-loaded",
+        error: "system-failed",
+      }
+    );
   });
 
   app.post("/api/reindex", async (req, res) => {

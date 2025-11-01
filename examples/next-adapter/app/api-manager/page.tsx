@@ -1,131 +1,121 @@
 'use client';
-import { useState, type CSSProperties, type FormEvent } from 'react';
 
-type FeedResult = {
-  ok?: boolean;
-  error?: string;
-  data?: any;
-  status?: number;
-  cached?: boolean;
-};
+import { useState, type FormEvent } from 'react';
 
-type LLMResult = {
-  model?: string;
-  output?: string;
-  error?: string;
-};
+const providers = [
+  { value: 'alpha-vantage', label: 'Alpha Vantage' },
+  { value: 'finnhub', label: 'Finnhub' },
+  { value: 'tiingo', label: 'Tiingo' },
+];
+
+const resources = [
+  { value: 'quote', label: 'Quote' },
+  { value: 'timeseries', label: 'Timeseries' },
+  { value: 'company', label: 'Company' },
+];
 
 export default function ApiManagerPage() {
-  const [feedFn, setFeedFn] = useState('TIME_SERIES_DAILY');
-  const [symbol, setSymbol] = useState('SPY');
-  const [feedResult, setFeedResult] = useState<FeedResult | null>(null);
-  const [feedLoading, setFeedLoading] = useState(false);
-  const [llmTask, setLlmTask] = useState('summarize');
-  const [prompt, setPrompt] = useState('Summarize the latest ingest run and highlight next steps.');
-  const [modelHint, setModelHint] = useState('local');
-  const [llmResult, setLlmResult] = useState<LLMResult | null>(null);
-  const [llmLoading, setLlmLoading] = useState(false);
+  const [provider, setProvider] = useState(providers[0].value);
+  const [resource, setResource] = useState(resources[0].value);
+  const [symbol, setSymbol] = useState('AAPL');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function runFeedProbe(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setFeedLoading(true);
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     setError(null);
+    setLoading(true);
     try {
-      const res = await fetch(`/api/feeds/alpha?fn=${feedFn}&symbol=${encodeURIComponent(symbol)}`);
+      const params = new URLSearchParams({ symbol, resource });
+      const res = await fetch(`/api/feeds/${provider}?${params.toString()}`);
       const json = await res.json();
-      setFeedResult(json);
-      if (!res.ok) throw new Error(json.error || 'Feed request failed');
-    } catch (err: any) {
-      setError(err?.message || 'Feed probe failed');
+      if (!res.ok) {
+        throw new Error(json.error || 'Request failed');
+      }
+      setResult(json);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Request failed');
+      setResult(null);
     } finally {
-      setFeedLoading(false);
-    }
-  }
-
-  async function runLlmProbe(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setLlmLoading(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/llm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ task: llmTask, prompt, modelHint })
-      });
-      const json = await res.json();
-      setLlmResult(json.result || json);
-      if (!res.ok) throw new Error(json.result?.error || json.error || 'LLM probe failed');
-    } catch (err: any) {
-      setError(err?.message || 'LLM probe failed');
-    } finally {
-      setLlmLoading(false);
+      setLoading(false);
     }
   }
 
   return (
-    <main style={mainStyle}>
-      <section style={cardStyle}>
-        <h1 style={titleStyle}>API Manager</h1>
-        <p style={leadStyle}>
-          Route free-tier data feeds and LLM tasks with inline telemetry. Caches Alpha Vantage responses for 60 seconds and
-          records Historian events for every probe.
-        </p>
-        {error && <p style={errorStyle}>{error}</p>}
-      </section>
+    <main className="min-h-screen bg-[var(--surface-base,#060608)] text-[var(--text-primary,#f5f5f5)]">
+      <section className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-12">
+        <header className="flex flex-col gap-2">
+          <p className="text-sm uppercase tracking-[0.2em] text-[var(--text-muted,#a1a1aa)]">VibeOS</p>
+          <h1 className="text-3xl font-semibold md:text-4xl">API Manager</h1>
+          <p className="max-w-2xl text-sm text-[var(--text-subtle,#d4d4d8)]">
+            Multi-provider feeds with caching, rate-limit resilience, and DTO-normalised outputs. Use the
+            playground below to inspect responses.
+          </p>
+        </header>
 
-      <section style={cardStyle}>
-        <h2 style={subtitleStyle}>Market Data Probe</h2>
-        <form onSubmit={runFeedProbe} style={formStyle}>
-          <label style={labelStyle}>
-            Function
-            <select value={feedFn} onChange={(event) => setFeedFn(event.currentTarget.value)} style={selectStyle}>
-              <option value="TIME_SERIES_DAILY">TIME_SERIES_DAILY</option>
-              <option value="OVERVIEW">OVERVIEW</option>
-            </select>
-          </label>
-          <label style={labelStyle}>
-            Symbol
-            <input value={symbol} onChange={(event) => setSymbol(event.currentTarget.value)} style={inputStyle} />
-          </label>
-          <button type="submit" style={buttonStyle} disabled={feedLoading}>
-            {feedLoading ? 'Fetching…' : 'Fetch feed'}
-          </button>
-        </form>
-        {feedResult && (
-          <pre style={preStyle}>{JSON.stringify(feedResult, null, 2)}</pre>
-        )}
-      </section>
+        <form
+          onSubmit={handleSubmit}
+          className="flex w-full flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur"
+        >
+          <div className="grid gap-4 md:grid-cols-3">
+            <label className="flex flex-col gap-2 text-sm">
+              <span className="text-[var(--text-muted,#a1a1aa)]">Provider</span>
+              <select
+                value={provider}
+                onChange={(e) => setProvider(e.target.value)}
+                className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-base text-white outline-none focus:border-[var(--accent,#22d3ee)] focus:ring-2 focus:ring-[var(--accent,#22d3ee)]/40"
+              >
+                {providers.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-      <section style={cardStyle}>
-        <h2 style={subtitleStyle}>LLM Router Probe</h2>
-        <form onSubmit={runLlmProbe} style={formStyle}>
-          <label style={labelStyle}>
-            Task
-            <select value={llmTask} onChange={(event) => setLlmTask(event.currentTarget.value)} style={selectStyle}>
-              <option value="summarize">summarize</option>
-              <option value="draft_copy">draft_copy</option>
-              <option value="classify">classify</option>
-            </select>
-          </label>
-          <label style={labelStyle}>
-            Prompt
-            <textarea value={prompt} onChange={(event) => setPrompt(event.currentTarget.value)} rows={5} style={textareaStyle} />
-          </label>
-          <label style={labelStyle}>
-            Model hint
-            <input value={modelHint} onChange={(event) => setModelHint(event.currentTarget.value)} style={inputStyle} />
-          </label>
-          <button type="submit" style={buttonStyle} disabled={llmLoading}>
-            {llmLoading ? 'Routing…' : 'Send to LLM router'}
-          </button>
-        </form>
-        {llmResult && (
-          <div style={llmResultStyle}>
-            <p style={{ margin: 0, fontWeight: 600 }}>Model: {llmResult.model || 'n/a'}</p>
-            <pre style={preStyle}>{llmResult.error || llmResult.output || 'No response'}</pre>
+            <label className="flex flex-col gap-2 text-sm">
+              <span className="text-[var(--text-muted,#a1a1aa)]">Resource</span>
+              <select
+                value={resource}
+                onChange={(e) => setResource(e.target.value)}
+                className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-base text-white outline-none focus:border-[var(--accent,#22d3ee)] focus:ring-2 focus:ring-[var(--accent,#22d3ee)]/40"
+              >
+                {resources.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-2 text-sm">
+              <span className="text-[var(--text-muted,#a1a1aa)]">Symbol</span>
+              <input
+                value={symbol}
+                onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                placeholder="AAPL"
+                className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-base text-white outline-none focus:border-[var(--accent,#22d3ee)] focus:ring-2 focus:ring-[var(--accent,#22d3ee)]/40"
+              />
+            </label>
           </div>
-        )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="inline-flex items-center justify-center rounded-full bg-[var(--accent,#22d3ee)] px-5 py-2 text-sm font-medium text-black transition hover:bg-[var(--accent-strong,#67e8f9)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent,#22d3ee)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loading ? 'Loading…' : 'Fetch feed'}
+          </button>
+          {error ? <p className="text-sm text-red-300">{error}</p> : null}
+        </form>
+
+        <section className="rounded-2xl border border-white/10 bg-black/30 p-6">
+          <h2 className="text-lg font-semibold">Normalised response</h2>
+          <pre className="mt-4 max-h-[420px] overflow-auto rounded-xl bg-black/70 p-4 text-xs leading-relaxed text-[var(--text-subtle,#d4d4d8)]">
+            {result ? JSON.stringify(result, null, 2) : 'Run a request to view provider output.'}
+          </pre>
+        </section>
       </section>
     </main>
   );
