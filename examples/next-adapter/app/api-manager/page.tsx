@@ -120,3 +120,93 @@ export default function ApiManagerPage() {
     </main>
   );
 }
+
+const mainStyle: CSSProperties = {
+  display: 'grid',
+  gap: '24px',
+  padding: '24px 0'
+};
+
+const cardStyle: CSSProperties = {
+  background: 'rgb(255,255,255)',
+  borderRadius: '16px',
+  padding: '24px',
+  boxShadow: '0 12px 32px rgba(15,23,42,0.08)',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '16px'
+};
+
+const titleStyle: CSSProperties = {
+  margin: 0,
+  fontSize: '1.8rem'
+};
+
+const subtitleStyle: CSSProperties = {
+  margin: 0,
+  fontSize: '1.3rem'
+};
+
+const leadStyle: CSSProperties = {
+  margin: 0,
+  color: 'rgba(0,0,0,0.65)',
+  lineHeight: 1.6
+};
+
+const errorStyle: CSSProperties = {
+  margin: 0,
+  color: 'rgba(190,18,60,0.9)',
+  fontWeight: 600
+};
+
+const formStyle: CSSProperties = {
+  display: 'grid',
+  gap: '12px',
+  alignItems: 'start'
+};
+
+const labelStyle: CSSProperties = {
+  display: 'grid',
+  gap: '6px',
+  fontWeight: 600
+};
+
+const inputStyle: CSSProperties = {
+  padding: '10px',
+  borderRadius: '10px',
+  border: '1px solid rgba(15,23,42,0.12)',
+  background: 'rgba(248,250,252,0.9)'
+};
+
+const selectStyle: CSSProperties = { ...inputStyle };
+
+const textareaStyle: CSSProperties = {
+  ...inputStyle,
+  resize: 'vertical'
+};
+
+const buttonStyle: CSSProperties = {
+  padding: '12px 20px',
+  borderRadius: '999px',
+  border: 'none',
+  background: 'rgba(37,99,235,0.85)',
+  color: 'white',
+  fontWeight: 600,
+  cursor: 'pointer'
+};
+
+const preStyle: CSSProperties = {
+  background: 'rgba(15,23,42,0.07)',
+  borderRadius: '12px',
+  padding: '16px',
+  margin: 0,
+  maxHeight: '320px',
+  overflow: 'auto',
+  fontSize: '0.85rem',
+  lineHeight: 1.5
+};
+
+const llmResultStyle: CSSProperties = {
+  display: 'grid',
+  gap: '8px'
+};
