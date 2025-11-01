@@ -1,4 +1,7 @@
 node_modules
 dist
 .mcp-nn
+.mcp-nn-test
+.playwright-cache
+test-results
 .DS_Store

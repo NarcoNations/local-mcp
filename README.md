@@ -37,6 +37,16 @@ The UI (served from <http://localhost:3030>) is fully responsive, mobile-first, 
 
 The UI is bundled into the Vercel-friendly build output (`npm run build`) and served by the HTTP bridge.
 
+## Testing
+
+The project ships with automated suites that cover server integrations and the responsive UI.
+
+- `npm run test:unit` – runs the Vitest suites, including the HTTP bridge integration tests (`tests/http.spec.ts`) and MCP toolkit flow coverage (`tests/mcp-toolkit.spec.ts`).
+- `npm run test:e2e` – launches Playwright and verifies the control room layout across mobile, tablet, and desktop breakpoints.
+- `npm run test:ci` – executes both suites sequentially (used by the GitHub Actions workflow).
+
+Playwright spins up the HTTP bridge via `npm run dev:http`; ensure ports 3030/host `127.0.0.1` are available locally. For deterministic runs in CI you may need to install browser dependencies with `npx playwright install --with-deps` (handled automatically in the workflow).
+
 ### Expose the bridge to ChatGPT (HTTPS + SSE)
 
 1. Start the bridge: `npm run dev:http` (or `npm start` after `npm run build`).
