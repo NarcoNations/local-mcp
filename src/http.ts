@@ -88,7 +88,7 @@ function getSessionId(req: Request): string | undefined {
 }
 
 async function main() {
-  const config = await loadConfig();
+  let config = await loadConfig();
   const httpToolkit = createToolKit(config, {
     onWatchEvent: (event) => {
       pushLog("info", "watch-event", event as Record<string, unknown>);
@@ -277,6 +277,69 @@ async function main() {
         success: "import-completed",
         error: "import-failed",
         meta: { outDir: req.body?.outDir },
+      }
+    );
+  });
+
+  app.post("/api/feeds", async (req, res) => {
+    await respond(
+      res,
+      () => httpToolkit.fetchFeed(req.body),
+      {
+        success: "feed-fetched",
+        error: "feed-failed",
+        meta: {
+          dataset: req.body?.dataset,
+          providerId: req.body?.providerId,
+          symbol: req.body?.symbol,
+        },
+      }
+    );
+  });
+
+  app.post("/api/llm/run", async (req, res) => {
+    await respond(
+      res,
+      () => httpToolkit.runLLM(req.body),
+      {
+        success: "llm-route-completed",
+        error: "llm-route-failed",
+        meta: {
+          task: req.body?.task,
+          providerId: req.body?.providerId,
+          hint: req.body?.modelHint ? "<redacted>" : undefined,
+        },
+      }
+    );
+  });
+
+  app.get("/api/providers", async (_req, res) => {
+    await respond(
+      res,
+      async () => httpToolkit.listProviders(),
+      {
+        success: "providers-listed",
+        error: "providers-list-failed",
+      }
+    );
+  });
+
+  app.post("/api/providers/config", async (req, res) => {
+    await respond(
+      res,
+      async () => {
+        const manifest = await httpToolkit.updateProviders(req.body ?? {});
+        config = httpToolkit.getConfig();
+        return manifest;
+      },
+      {
+        success: "providers-updated",
+        error: "providers-update-failed",
+        meta: {
+          credentials: req.body?.credentials ? Object.keys(req.body.credentials) : undefined,
+          feedCaching: req.body?.feedCaching ? true : undefined,
+          llmRouting: req.body?.llmRouting ? true : undefined,
+        },
       }
     );
   });

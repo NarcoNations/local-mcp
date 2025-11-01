@@ -429,6 +429,93 @@
         color: rgba(231, 235, 255, 0.85);
       }
 
+      .provider-grid {
+        display: grid;
+        gap: 0.9rem;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      }
+
+      .provider-card {
+        border-radius: 0.9rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 0.9rem;
+        background: rgba(8, 14, 26, 0.7);
+        display: grid;
+        gap: 0.4rem;
+      }
+
+      .provider-card h3 {
+        margin: 0;
+        font-size: 1rem;
+      }
+
+      .provider-card p {
+        margin: 0;
+        font-size: 0.85rem;
+        color: rgba(231, 235, 255, 0.65);
+      }
+
+      .provider-card .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+
+      .toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 0.75rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(10, 16, 28, 0.65);
+      }
+
+      .llm-output,
+      .feed-output {
+        background: rgba(8, 16, 32, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 0.9rem;
+        padding: 0.9rem;
+        font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+        font-size: 0.85rem;
+        white-space: pre-wrap;
+        color: rgba(231, 235, 255, 0.85);
+        min-height: 120px;
+      }
+
+      .provider-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      .inline-inputs {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      }
+
+      .llm-controls,
+      .feed-controls {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .panel-subsection {
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        padding-top: 1rem;
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .panel-subsection h3 {
+        margin: 0;
+        font-size: 1.05rem;
+      }
+
       @media (max-width: 720px) {
         body {
           padding: 1rem;
@@ -552,6 +639,118 @@
           <div id="control-feedback" class="control-feedback" role="status" aria-live="polite"></div>
         </section>
 
+        <section class="panel provider-panel">
+          <h2>API routing &amp; providers</h2>
+          <div class="provider-grid" id="provider-status" aria-live="polite"></div>
+          <form id="provider-config-form" class="control-form">
+            <div class="inline-inputs">
+              <div class="field">
+                <label for="alpha-key">Alpha Vantage API key</label>
+                <input id="alpha-key" type="text" autocomplete="off" placeholder="demo or live key" />
+              </div>
+              <div class="field">
+                <label for="openai-key">OpenAI API key</label>
+                <input id="openai-key" type="text" autocomplete="off" placeholder="sk-..." />
+              </div>
+              <div class="field">
+                <label for="openai-base">OpenAI base URL</label>
+                <input id="openai-base" type="text" placeholder="https://api.openai.com/v1" />
+              </div>
+            </div>
+            <div class="inline-inputs">
+              <div class="field">
+                <label for="feed-ttl">Feed cache TTL (seconds)</label>
+                <input id="feed-ttl" type="number" min="30" max="3600" step="30" />
+              </div>
+              <div class="field">
+                <label class="toggle"><input id="feed-cache-enabled" type="checkbox" /> Enable feed caching</label>
+              </div>
+              <div class="field">
+                <label for="llm-default">LLM default provider</label>
+                <select id="llm-default"></select>
+              </div>
+              <div class="field">
+                <label for="llm-fallback">LLM fallback provider</label>
+                <select id="llm-fallback"></select>
+              </div>
+            </div>
+            <div class="provider-actions">
+              <button type="submit" class="ghost">Save provider config</button>
+              <span id="provider-feedback" class="control-feedback" role="status" aria-live="polite"></span>
+            </div>
+          </form>
+
+          <div class="panel-subsection">
+            <h3>LLM policy probe</h3>
+            <form id="llm-form" class="llm-controls">
+              <div class="inline-inputs">
+                <div class="field">
+                  <label for="llm-task">Task</label>
+                  <select id="llm-task">
+                    <option value="draft_copy">Draft copy</option>
+                    <option value="summarize">Summarize</option>
+                    <option value="classify">Classify</option>
+                    <option value="qa">Q&amp;A</option>
+                    <option value="chat">Chat</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="llm-provider">Preferred provider (optional)</label>
+                  <select id="llm-provider">
+                    <option value="">Auto</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="llm-hint">Model hint</label>
+                  <input id="llm-hint" type="text" placeholder="gpt-4o, local, etc." />
+                </div>
+              </div>
+              <label for="llm-prompt">Prompt</label>
+              <textarea id="llm-prompt" rows="4" placeholder="Describe the analysis you need"></textarea>
+              <div class="inline-inputs">
+                <div class="field">
+                  <label for="llm-temperature">Temperature</label>
+                  <input id="llm-temperature" type="number" step="0.1" min="0" max="2" placeholder="0.7" />
+                </div>
+                <div class="field">
+                  <label for="llm-max-tokens">Max tokens</label>
+                  <input id="llm-max-tokens" type="number" min="16" max="32000" step="16" placeholder="1024" />
+                </div>
+              </div>
+              <button type="submit" class="primary">Run routed LLM</button>
+            </form>
+            <pre id="llm-output" class="llm-output" aria-live="polite"></pre>
+          </div>
+
+          <div class="panel-subsection">
+            <h3>Feed probe</h3>
+            <form id="feed-form" class="feed-controls">
+              <div class="inline-inputs">
+                <div class="field">
+                  <label for="feed-symbol">Symbol</label>
+                  <input id="feed-symbol" type="text" placeholder="e.g. AAPL" />
+                </div>
+                <div class="field">
+                  <label for="feed-dataset">Dataset</label>
+                  <select id="feed-dataset">
+                    <option value="timeSeriesDaily">Daily time series</option>
+                    <option value="companyOverview">Company overview</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="feed-provider">Provider (optional)</label>
+                  <select id="feed-provider">
+                    <option value="">Auto</option>
+                  </select>
+                </div>
+              </div>
+              <label class="toggle"><input id="feed-force-refresh" type="checkbox" /> Bypass cache</label>
+              <button type="submit" class="ghost">Fetch feed</button>
+            </form>
+            <pre id="feed-output" class="feed-output" aria-live="polite"></pre>
+          </div>
+        </section>
+
         <section class="panel logs-panel">
           <h2>Activity log</h2>
           <div id="logs" class="log-stream" aria-live="polite"></div>
@@ -574,6 +773,30 @@
         pages: document.getElementById("stat-pages"),
       };
       const lastIndexed = document.getElementById("last-indexed");
+      const providerStatus = document.getElementById("provider-status");
+      const providerForm = document.getElementById("provider-config-form");
+      const providerFeedback = document.getElementById("provider-feedback");
+      const alphaKeyInput = document.getElementById("alpha-key");
+      const openaiKeyInput = document.getElementById("openai-key");
+      const openaiBaseInput = document.getElementById("openai-base");
+      const feedTtlInput = document.getElementById("feed-ttl");
+      const feedCacheCheckbox = document.getElementById("feed-cache-enabled");
+      const llmDefaultSelect = document.getElementById("llm-default");
+      const llmFallbackSelect = document.getElementById("llm-fallback");
+      const llmProviderSelect = document.getElementById("llm-provider");
+      const feedProviderSelect = document.getElementById("feed-provider");
+      const llmForm = document.getElementById("llm-form");
+      const llmOutput = document.getElementById("llm-output");
+      const feedForm = document.getElementById("feed-form");
+      const feedOutput = document.getElementById("feed-output");
+      const llmHintInput = document.getElementById("llm-hint");
+      const llmTaskSelect = document.getElementById("llm-task");
+      const llmPromptInput = document.getElementById("llm-prompt");
+      const llmTempInput = document.getElementById("llm-temperature");
+      const llmMaxTokensInput = document.getElementById("llm-max-tokens");
+      const feedSymbolInput = document.getElementById("feed-symbol");
+      const feedDatasetSelect = document.getElementById("feed-dataset");
+      const feedForceCheckbox = document.getElementById("feed-force-refresh");
 
       async function api(path, options = {}) {
         const response = await fetch(path, {
@@ -597,6 +820,116 @@
         const date = new Date(value);
         if (Number.isNaN(date.getTime())) return "Last indexed: —";
         return `Last indexed: ${date.toLocaleString()}`;
+      }
+
+      function setProviderFeedback(message, kind = "info") {
+        providerFeedback.textContent = message;
+        providerFeedback.classList.remove("success", "error");
+        if (kind === "success") providerFeedback.classList.add("success");
+        if (kind === "error") providerFeedback.classList.add("error");
+      }
+
+      function populateSelect(select, options, placeholder) {
+        const previous = select.value;
+        select.innerHTML = "";
+        if (placeholder !== undefined) {
+          const opt = document.createElement("option");
+          opt.value = "";
+          opt.textContent = placeholder;
+          select.appendChild(opt);
+        }
+        options.forEach(({ value, label }) => {
+          const opt = document.createElement("option");
+          opt.value = value;
+          opt.textContent = label;
+          select.appendChild(opt);
+        });
+        if (options.some((option) => option.value === previous)) {
+          select.value = previous;
+        }
+      }
+
+      function createProviderCard(title, description, statusText, extraText) {
+        const card = document.createElement("div");
+        card.className = "provider-card";
+        const heading = document.createElement("h3");
+        heading.textContent = title;
+        card.appendChild(heading);
+        if (description) {
+          const desc = document.createElement("p");
+          desc.textContent = description;
+          card.appendChild(desc);
+        }
+        const status = document.createElement("span");
+        status.className = "status";
+        status.textContent = statusText;
+        card.appendChild(status);
+        if (extraText) {
+          const extra = document.createElement("span");
+          extra.className = "status";
+          extra.textContent = extraText;
+          card.appendChild(extra);
+        }
+        return card;
+      }
+
+      function renderProviderStatus(manifest) {
+        providerStatus.innerHTML = "";
+        if (!manifest) return;
+
+        const feedOptions = manifest.feeds.map((provider) => {
+          const creds = manifest.credentials?.[provider.id];
+          const message = creds?.hasApiKey
+            ? "🔒 Key configured"
+            : creds
+            ? "⚠️ Key missing"
+            : "ℹ️ No key required";
+          const extra = creds?.baseUrl ? `Endpoint: ${creds.baseUrl}` : undefined;
+          providerStatus.appendChild(createProviderCard(provider.label, provider.description, message, extra));
+          return { value: provider.id, label: provider.label };
+        });
+
+        const llmOptions = manifest.llm.map((provider) => {
+          const creds = manifest.credentials?.[provider.id];
+          const message = creds?.hasApiKey
+            ? "🔒 Key configured"
+            : creds
+            ? "⚠️ Key missing"
+            : "ℹ️ No key required";
+          const extra = creds?.baseUrl ? `Endpoint: ${creds.baseUrl}` : undefined;
+          providerStatus.appendChild(createProviderCard(provider.label, provider.description, message, extra));
+          return { value: provider.id, label: provider.label };
+        });
+
+        const cacheState = manifest.feedCaching.enabled ? "✅ Enabled" : "⚠️ Disabled";
+        providerStatus.appendChild(
+          createProviderCard(
+            "Feed cache",
+            `Responses cached for ${manifest.feedCaching.ttlSeconds}s`,
+            cacheState
+          )
+        );
+
+        const policySummary = `${manifest.routing.policies.length} policy rule(s)`;
+        const routingStatus = `Default: ${manifest.routing.defaultProviderId || "—"} · Fallback: ${
+          manifest.routing.fallbackProviderId || "—"
+        }`;
+        providerStatus.appendChild(createProviderCard("LLM routing", policySummary, routingStatus));
+
+        populateSelect(llmDefaultSelect, llmOptions);
+        populateSelect(llmFallbackSelect, llmOptions, "None");
+        populateSelect(llmProviderSelect, llmOptions, "Auto");
+        populateSelect(feedProviderSelect, feedOptions, "Auto");
+
+        if (manifest.routing.defaultProviderId) {
+          llmDefaultSelect.value = manifest.routing.defaultProviderId;
+        }
+        if (manifest.routing.fallbackProviderId) {
+          llmFallbackSelect.value = manifest.routing.fallbackProviderId;
+        }
+
+        feedCacheCheckbox.checked = Boolean(manifest.feedCaching.enabled);
+        feedTtlInput.value = manifest.feedCaching.ttlSeconds?.toString() ?? "";
       }
 
       function createResultCard(result) {
@@ -704,6 +1037,16 @@
         }
       }
 
+      async function loadProviders() {
+        try {
+          const manifest = await api("/api/providers");
+          renderProviderStatus(manifest);
+          setProviderFeedback("", "info");
+        } catch (error) {
+          setProviderFeedback(`Failed to load providers: ${error.message}`, "error");
+        }
+      }
+
       function setFeedback(message, kind = "info") {
         controlFeedback.textContent = message;
         controlFeedback.classList.remove("success", "error");
@@ -800,6 +1143,117 @@
         }
       });
 
+      providerForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const payload = {};
+        const credentials = {};
+        const alphaKey = alphaKeyInput.value.trim();
+        if (alphaKey) {
+          credentials.alphaVantage = { apiKey: alphaKey };
+        }
+        const openaiKey = openaiKeyInput.value.trim();
+        const openaiBase = openaiBaseInput.value.trim();
+        if (openaiKey || openaiBase) {
+          credentials.openai = {};
+          if (openaiKey) credentials.openai.apiKey = openaiKey;
+          if (openaiBase) credentials.openai.baseUrl = openaiBase;
+        }
+        if (Object.keys(credentials).length) {
+          payload.credentials = credentials;
+        }
+        const caching = { enabled: feedCacheCheckbox.checked };
+        const ttl = Number(feedTtlInput.value);
+        if (!Number.isNaN(ttl) && ttl > 0) {
+          caching.ttlSeconds = ttl;
+        }
+        payload.feedCaching = caching;
+        const routing = {};
+        if (llmDefaultSelect.value) routing.defaultProviderId = llmDefaultSelect.value;
+        if (llmFallbackSelect.value) routing.fallbackProviderId = llmFallbackSelect.value;
+        if (Object.keys(routing).length) {
+          payload.llmRouting = routing;
+        }
+        try {
+          const manifest = await api("/api/providers/config", {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          renderProviderStatus(manifest);
+          setProviderFeedback("Provider configuration updated.", "success");
+          alphaKeyInput.value = "";
+          openaiKeyInput.value = "";
+        } catch (error) {
+          setProviderFeedback(`Update failed: ${error.message}`, "error");
+        }
+      });
+
+      llmForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const prompt = llmPromptInput.value.trim();
+        if (!prompt) {
+          llmOutput.textContent = "Provide a prompt before running the LLM.";
+          return;
+        }
+        const payload = {
+          task: llmTaskSelect.value,
+          prompt,
+        };
+        if (llmHintInput.value.trim()) payload.modelHint = llmHintInput.value.trim();
+        if (llmProviderSelect.value) payload.providerId = llmProviderSelect.value;
+        const temp = Number(llmTempInput.value);
+        if (!Number.isNaN(temp)) payload.temperature = temp;
+        const maxTokens = Number(llmMaxTokensInput.value);
+        if (!Number.isNaN(maxTokens) && maxTokens > 0) payload.maxTokens = maxTokens;
+        llmOutput.textContent = "Running policy routing…";
+        try {
+          const result = await api("/api/llm/run", {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          llmOutput.textContent = [
+            `Provider: ${result.providerId} (${result.model})`,
+            `Policy: ${result.policyId ?? "default"}`,
+            `Latency: ${Math.round(result.latencyMs)} ms`,
+            result.usage
+              ? `Usage: prompt ${result.usage.promptTokens ?? 0}, completion ${
+                  result.usage.completionTokens ?? 0
+                }, total ${result.usage.totalTokens ?? 0}`
+              : undefined,
+            "",
+            result.output,
+          ]
+            .filter(Boolean)
+            .join("\n");
+        } catch (error) {
+          llmOutput.textContent = `LLM routing failed: ${error.message}`;
+        }
+      });
+
+      feedForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const symbol = feedSymbolInput.value.trim();
+        if (!symbol) {
+          feedOutput.textContent = "Provide a symbol before fetching.";
+          return;
+        }
+        const payload = {
+          symbol: symbol.toUpperCase(),
+          dataset: feedDatasetSelect.value,
+        };
+        if (feedProviderSelect.value) payload.providerId = feedProviderSelect.value;
+        if (feedForceCheckbox.checked) payload.forceRefresh = true;
+        feedOutput.textContent = "Fetching feed…";
+        try {
+          const result = await api("/api/feeds", {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          feedOutput.textContent = JSON.stringify(result, null, 2);
+        } catch (error) {
+          feedOutput.textContent = `Feed fetch failed: ${error.message}`;
+        }
+      });
+
       function appendLog(entry) {
         const wrapper = document.createElement("div");
         wrapper.className = `log-entry ${entry.level}`;
@@ -853,7 +1307,10 @@
       }
 
       renderResults([]);
+      llmOutput.textContent = "Awaiting routed LLM run.";
+      feedOutput.textContent = "Awaiting feed request.";
       loadStats();
+      loadProviders();
       primeLogs().then(startLogStream);
     </script>
   </body>
