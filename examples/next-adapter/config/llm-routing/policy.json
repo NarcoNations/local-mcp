@@ -1,0 +1,16 @@
+{
+  "defaults": {
+    "prefer": ["openai:gpt-4o-mini"],
+    "fallback": ["local:mock"],
+    "maxCost": 0.75,
+    "maxLatencyMs": 20000
+  },
+  "tasks": {
+    "draft_copy": { "prefer": ["openai:gpt-4o-mini"], "fallback": ["local:mock"], "maxCost": 0.6 },
+    "summarize": { "prefer": ["openai:gpt-4o-mini"], "fallback": ["local:mock"], "maxCost": 0.35 },
+    "classify": { "prefer": ["openai:gpt-4o-mini"], "fallback": ["local:mock"], "maxCost": 0.15 },
+    "research_plan": { "prefer": ["openai:gpt-4o-mini"], "fallback": ["local:mock"], "maxCost": 1.0 },
+    "narrative_draft": { "prefer": ["openai:gpt-4o-mini"], "fallback": ["local:mock"], "maxCost": 1.2 },
+    "code_review": { "prefer": ["openai:gpt-4o-mini"], "fallback": ["local:mock"], "maxCost": 0.5 }
+  }
+}

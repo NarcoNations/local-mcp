@@ -1,29 +1,66 @@
-# Next.js Adapter (Example) — `/app/api/ingest/convert`
+# Next.js Adapter — Production Sandboxed Stack
 
-This example shows a minimal **Next.js 14** API route that proxies an upload to the **md-convert** worker, unzips the result, and (optionally) writes files to **Supabase Storage**.
+The example Next.js 14 app now includes the full VibeOS production surface: job orchestration, policy gates, eval lab, map/social pipelines, NarcoNations MCP publish, and the Workroom → Build Brief hand-off.
 
-> It lives in `examples/next-adapter/` so it **won’t affect your main build**. Run it standalone if you want to test end-to-end.
+> Everything lives under `examples/next-adapter/` so you can iterate without touching the main monorepo.
 
 ## Quick start
 
 ```bash
 cd examples/next-adapter
-pm i
-cp .env.example .env.local  # set MD_CONVERT_URL and Supabase vars if using storage
+npm install
+cp .env.example .env.local
+# toggle feature flags as needed (all default to false)
 npm run dev
-# POST a file to http://localhost:3000/api/ingest/convert
 ```
 
-## Env
-- `MD_CONVERT_URL` (e.g. `http://localhost:8000`)
-- `INGEST_SUPABASE` = `true` to enable Supabase writes (optional)
-- `SUPABASE_URL` / `SUPABASE_ANON_KEY`
-- `SUPABASE_BUCKET_FILES` (default: `files`)
+Visit:
 
-## Notes
-- Uses `unzipit` to unpack the worker ZIP in-memory.
-- If Supabase is **disabled**, the route returns a JSON summary (filenames, bytes).
-- Front‑matter insertion/merge is left as a TODO (depends on your markdown policy).
+- `/metrics` — cost, latency, and health dashboards
+- `/evals` — Eval Lab leaderboard (enable `FF_EVALS=true`)
+- `/policy` — Ethics Council log (enable map/social flags)
+- `/play/map` — PMTiles pipeline (enable `FF_MAP_PIPELINE=true`)
+- `/play/social` — social render/publish queue (enable `FF_SOCIAL_PIPELINE=true`)
+- `/publish` — MCP package approvals
+- `/mvp` — Build briefs, generate docs, dispatch jobs
 
-## Clean Intent
-Log provenance (`manifest.json`) with extractor list and converted_at; keep auditability.
+## Feature Flags
+
+- `FF_JOBS_WORKER` — enable background worker runtime
+- `FF_COST_TELEMETRY` — reserved for future paid-provider cost hooks
+- `FF_EVALS` — unlock Eval Lab
+- `FF_MAP_PIPELINE` — allow map build API + UI
+- `FF_SOCIAL_PIPELINE` — allow social render/publish workflow
+
+## Core Env Vars
+
+- `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY`
+- `API_HMAC_SECRET` (optional HMAC on API calls)
+- `OPENAI_API_KEY` (if routing to OpenAI via API manager)
+
+## Worker Runtime
+
+- Implement custom job handlers in `worker/jobs.ts` (`// EDIT HERE` markers).
+- Run the worker with `node --loader ts-node/esm worker/jobs.ts` or bundle it.
+- Historian and `audit` tables track state transitions automatically.
+
+## Observability
+
+- `/api/metrics.json` powers external dashboards.
+- `/api/health` inserts composite checks into `service_health`.
+- Alerts emit Historian `alert` events when thresholds exceed defaults.
+
+## Policy & Security
+
+- `middleware.ts` enforces API key scopes (`api_keys` table) and optional HMAC signatures.
+- `lib/policy.ts` houses Ethics Council rules with `// EDIT HERE` guardrails for custom policy tuning.
+- `docs/SECURITY.md` covers scopes, audit, and RLS reminders.
+
+## Build Briefs & MCP Publish
+
+- POST `/api/mvp/briefs` → capture briefs; `/api/mvp/generate` → create skeleton doc (data URL) stored in `build_briefs`.
+- `/api/mcp/narconations/publish` stages Markdown bundles into `publish_packages`; approve via `/publish` UI.
+
+## Legacy Ingest Route
+
+- `/api/ingest/convert` still proxies to `md-convert` with optional Supabase storage. Set `MD_CONVERT_URL` + `INGEST_SUPABASE=true` to activate.
