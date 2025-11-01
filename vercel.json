@@ -5,5 +5,22 @@
   "outputDirectory": "dist",
   "env": {
     "NODE_OPTIONS": "--enable-source-maps"
-  }
+  },
+  "functions": {
+    "api/server.ts": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 60,
+      "memory": 1024
+    }
+  },
+  "routes": [
+    { "src": "/mcp(?:/.*)?", "dest": "/api/server" },
+    { "src": "/api(?:/.*)?", "dest": "/api/server" },
+    { "src": "/events", "dest": "/api/server" },
+    { "src": "/health", "dest": "/api/server" },
+    { "src": "/mcp\\.json", "dest": "/api/server" },
+    { "handle": "filesystem" },
+    { "src": "/", "dest": "/dist/index.html" },
+    { "src": "/(.*)", "dest": "/dist/$1" }
+  ]
 }

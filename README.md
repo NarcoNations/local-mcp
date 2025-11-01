@@ -37,6 +37,13 @@ The UI (served from <http://localhost:3030>) is fully responsive, mobile-first, 
 
 The UI is bundled into the Vercel-friendly build output (`npm run build`) and served by the HTTP bridge.
 
+### Deploying to Vercel
+
+- `npm run build` emits the static control room UI into `dist/`, which Vercel serves directly while routing all API, MCP, and SSE traffic to `api/server.ts`.
+- The Express bridge runs inside the `@vercel/node` runtime; long-lived connections such as `/events` and `/api/logs/stream` work as standard server-sent events.
+- Serverless functions on Vercel have a hard execution window (60 seconds with the provided configuration). SSE clients should automatically reconnect to handle the timeout, and the bridge resumes streaming immediately thanks to the shared in-memory log buffer.
+- MCP SSE sessions (`/mcp/sse`) share the same runtime constraints. Most MCP clients retry automatically; if a session drops at the 60-second mark, reconnect to continue the conversation.
+
 ### Expose the bridge to ChatGPT (HTTPS + SSE)
 
 1. Start the bridge: `npm run dev:http` (or `npm start` after `npm run build`).
