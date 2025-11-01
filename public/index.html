@@ -152,13 +152,15 @@
 
       input,
       button,
-      textarea {
+      textarea,
+      select {
         font: inherit;
       }
 
       input[type="text"],
       input[type="number"],
-      textarea {
+      textarea,
+      select {
         width: 100%;
         border-radius: 0.9rem;
         border: 1px solid rgba(255, 255, 255, 0.08);
@@ -169,7 +171,8 @@
       }
 
       input:focus,
-      textarea:focus {
+      textarea:focus,
+      select:focus {
         outline: none;
         border-color: rgba(74, 209, 255, 0.6);
         box-shadow: 0 0 0 3px rgba(74, 209, 255, 0.25);
@@ -549,6 +552,25 @@
             <input id="import-out" type="text" placeholder="./docs/chatgpt-export-md" value="./docs/chatgpt-export-md" />
             <button type="submit" class="ghost">Import &amp; reindex</button>
           </form>
+          <form id="convert-form" class="control-form">
+            <label for="convert-path">Document path</label>
+            <input id="convert-path" type="text" placeholder="./docs/incoming/report.pdf" required />
+            <label for="convert-tags">Tags (optional)</label>
+            <input id="convert-tags" type="text" placeholder="research, briefing" />
+            <label for="convert-origin">Origin</label>
+            <select id="convert-origin">
+              <option value="">Select origin</option>
+              <option value="upload">Upload</option>
+              <option value="email">Email</option>
+              <option value="url">URL</option>
+              <option value="drop">Drop</option>
+            </select>
+            <label for="convert-out">Output directory</label>
+            <input id="convert-out" type="text" placeholder="./docs/md-convert" value="./docs/md-convert" />
+            <div class="form-actions">
+              <button type="submit" class="ghost">Convert via md-convert</button>
+            </div>
+          </form>
           <div id="control-feedback" class="control-feedback" role="status" aria-live="polite"></div>
         </section>
 
@@ -797,6 +819,43 @@
           loadStats();
         } catch (error) {
           setFeedback(`Import failed: ${error.message}`, "error");
+        }
+      });
+
+      document.getElementById("convert-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const sourcePath = document.getElementById("convert-path").value.trim();
+        const tagsValue = document.getElementById("convert-tags").value.trim();
+        const originValue = document.getElementById("convert-origin").value;
+        const outDirValue = document.getElementById("convert-out").value.trim();
+        if (!sourcePath) {
+          setFeedback("Provide a document path before converting.", "error");
+          return;
+        }
+        const payload = { path: sourcePath };
+        if (tagsValue) {
+          payload.tags = tagsValue
+            .split(",")
+            .map((part) => part.trim())
+            .filter(Boolean);
+        }
+        if (originValue) {
+          payload.origin = originValue;
+        }
+        if (outDirValue) {
+          payload.outDir = outDirValue;
+        }
+        try {
+          const result = await api("/api/convert", {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          const indexed = typeof result.indexed === "number" ? result.indexed : 0;
+          const suffix = indexed === 1 ? "chunk" : "chunks";
+          setFeedback(`Converted to ${result.markdownPath} (indexed ${indexed} ${suffix}).`, "success");
+          loadStats();
+        } catch (error) {
+          setFeedback(`Convert failed: ${error.message}`, "error");
         }
       });
 

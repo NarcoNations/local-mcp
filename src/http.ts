@@ -281,6 +281,18 @@ async function main() {
     );
   });
 
+  app.post("/api/convert", async (req, res) => {
+    await respond(
+      res,
+      () => httpToolkit.mdConvert(req.body ?? {}),
+      {
+        success: "md-convert-completed",
+        error: "md-convert-failed",
+        meta: { path: req.body?.path, outDir: req.body?.outDir },
+      }
+    );
+  });
+
   app.get("/api/logs", (_req, res) => {
     res.json({ ok: true, data: logs });
   });
