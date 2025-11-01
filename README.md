@@ -35,12 +35,16 @@ The UI (served from <http://localhost:3030>) is fully responsive, mobile-first, 
 - Maintenance actions: manual reindex, watcher activation, ChatGPT export import.
 - Live activity log streamed via SSE for visibility into reindexing, watch events, and bridge status.
 
-#### Responsive layout checkpoints
+#### Responsive UX expectations
 
-- **≤600 px:** stacked status chips, vertical form actions, and space-efficient panel padding for small phones.
-- **≥768 px:** hero headline and status indicators snap into a two-column grid for crisp tablet layouts.
-- **≥960 px:** main content switches to a two-column dashboard with the search panel pinned in place.
-- **≥1200 px:** wide displays gain expanded gutters, cinematic panel padding, and a full-width activity log for command-center setups.
+- **Mobile-first:** the primary navigation collapses into a gesture-friendly drawer, cards reflow into a single column, and all tap
+  targets remain ≥44 px. Critical search and reindex controls stay within the initial viewport without horizontal scrolling.
+- **Tablets & small laptops:** results switch to two-column masonry, detail panels slide over content with backdrop blur, and keyboard
+  shortcuts mirror desktop interactions.
+- **Desktop & cinematic displays:** panels stretch edge-to-edge with generous negative space, timeline feeds gain live density graphs,
+  and data tables unlock multi-column layouts while preserving the 16 px baseline grid.
+- **Accessibility:** focus rings stay visible across themes, prefers-reduced-motion disables kinetic transitions, and charts expose text
+  fallbacks for screen readers.
 
 The UI is bundled into the Vercel-friendly build output (`npm run build`) and served by the HTTP bridge.
 
@@ -55,6 +59,19 @@ The UI is bundled into the Vercel-friendly build output (`npm run build`) and se
 5. In ChatGPT (or any SSE-aware MCP client) add the manifest URL. The client will connect via SSE, and log messages/watch notifications propagate automatically.
 
 `metadata.stdio` retains the stdio command for clients that prefer local execution.
+
+### API manager highlights
+
+The API manager ships alongside the MCP server and exposes a typed gateway for market, research, and LLM providers:
+
+- **Provider adapters:** normalise responses from TradeOps, Finnhub, Tiingo, and NarcoNations internal feeds with DTOs shared by the
+  UI and MCP tools.
+- **Caching & resiliency:** per-provider caches with 60 s TTL, circuit-breaker retries on 429/5xx, and historian events for
+  observability.
+- **Secure routing:** API keys scoped by capability (`feeds:*`, `llm:*`, `ingest:*`, etc.) and validated through `X-API-Key` headers
+  plus optional HMAC signing.
+- **LLM orchestration:** multiplexes provider selection, temperature caps, and token budgeting so mobile and desktop clients can reuse
+  the same workflows.
 
 ### Example tool calls
 
@@ -183,17 +200,49 @@ Chunks use deterministic UUIDv5 IDs (path, page, offset) for stable reindexing.
 - No outbound network calls.
 - Configurable max file size (default 200 MB) and OCR character threshold.
 
-## Tests
+## Tests & quality gates
 
 ```bash
+# run once in CI mode
 npm test
+
+# watch mode during development
+npm test -- --watch
+
+# strict type safety (tsconfig.json)
+npm run typecheck
+
+# ensure the production bundle matches Vercel's build command
+npm run build
 ```
 
-Vitest covers chunking, hybrid storage, PDF OCR fallback (mocked), and ChatGPT conversion smoke tests.
+Vitest covers chunking, hybrid storage, PDF OCR fallback (mocked), and ChatGPT conversion smoke tests. TypeScript strict mode guards
+DTO drift between the API manager, MCP tools, and UI. The build step compiles the HTTP bridge and copies static assets exactly as Vercel
+will.
 
-## Vercel deployment
+## Deployment
 
-`vercel.json` is configured to run `npm run build` and publish `dist/` (which now contains static docs alongside compiled JS). The build avoids native dependencies, making the project safe for Vercel preview builds.
+### Local + tunnel (dev)
+
+1. `npm run dev` to start both MCP transports (stdio + HTTP/SSE bridge).
+2. Optionally expose the bridge with Cloudflare Tunnel or ngrok and update `mcp.json`'s `transport.url`.
+3. Share the hosted `mcp.json` manifest with MCP clients (ChatGPT, Claude Desktop, etc.).
+
+### Vercel (preview & prod)
+
+- `vercel.json` pins the install/build commands (`npm install`, `npm run build`) and publishes `dist/`.
+- Declare required environment variables in the Vercel dashboard (API keys, Supabase URLs, feature flags). The build injects
+  `NODE_OPTIONS=--enable-source-maps` automatically via `vercel.json`.
+- Set `EDGE_CONFIG` or provider API keys as encrypted secrets. The API manager reads them at runtime via `process.env`.
+- Use Vercel's custom domains or preview URLs; the HTTP bridge serves `mcp.json` at the root, ready for MCP clients.
+- Enable [Vercel Cron](https://vercel.com/docs/cron-jobs) for scheduled reindexing by calling the `/api/jobs/dispatch` route.
+
+### Self-hosted (docker/pm2)
+
+1. `npm install --omit=dev` on the target host.
+2. `npm run build` then serve `dist/http.js` with `node --enable-source-maps dist/http.js` or a process manager.
+3. Configure HTTPS termination (Caddy, nginx) and forward `/mcp/sse` to the HTTP bridge.
+4. Mirror the environment variable matrix from `.env.example` (coming soon) or Vercel dashboard settings.
 
 ## Styling & conventions
 
