@@ -1,62 +1,68 @@
-import type { CSSProperties, ReactNode } from 'react';
+import './globals.css';
+import type { Metadata } from 'next';
+import { clsx } from 'clsx';
 import Link from 'next/link';
+import { twMerge } from 'tailwind-merge';
 
-const bodyStyle: CSSProperties = {
-  margin: 0,
-  fontFamily: `'Inter', 'Segoe UI', sans-serif`,
-  background: 'rgb(245,247,250)',
-  color: 'rgb(15,23,42)'
-};
-
-const shellStyle: CSSProperties = {
-  maxWidth: '1200px',
-  margin: '0 auto',
-  padding: '0 20px 48px 20px',
-  width: '100%'
+export const metadata: Metadata = {
+  title: 'VibeOS Ultimate Dashboard',
+  description: 'Narco Nations × VibeLabz — adaptive operating system shell built for strategy, research, and creation.'
 };
 
 const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/ingest', label: 'Ingest' },
-  { href: '/corpus', label: 'Corpus' },
-  { href: '/knowledge', label: 'Knowledge' },
-  { href: '/search', label: 'Search' },
+  { href: '/', label: 'Overview' },
   { href: '/timeline', label: 'Historian' },
-  { href: '/api-manager', label: 'API Manager' },
-  { href: '/workroom', label: 'Workroom' },
-  { href: '/mvp', label: 'One-Shot MVP' },
+  { href: '/metrics', label: 'Metrics' },
   { href: '/library/prompts', label: 'Prompt Library' },
-  { href: '/research', label: 'Research Engine' },
-  { href: '/play/map', label: 'Map Playground' },
-  { href: '/play/social', label: 'Social Playground' }
+  { href: '/research', label: 'Research' },
+  { href: '/search', label: 'Search' },
+  { href: '/play/map', label: 'Map' },
+  { href: '/play/social', label: 'Social Lab' },
+  { href: '/api-manager', label: 'API Feeds' }
 ];
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body style={bodyStyle}>
-        <style>{`
-          *, *::before, *::after { box-sizing: border-box; }
-          a { color: inherit; text-decoration: none; }
-          a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible {
-            outline: 2px solid rgba(59,130,246,0.8);
-            outline-offset: 2px;
-          }
-        `}</style>
-        <header style={headerStyle}>
-          <div style={brandStyle}>
-            <span style={{ fontWeight: 700, fontSize: '1.2rem' }}>VibeOS Adapter</span>
-            <span style={{ color: 'rgba(15,23,42,0.6)', fontSize: '0.9rem' }}>Ingest → Knowledge → Ops Surface</span>
-          </div>
-          <nav style={navStyle}>
-            {navLinks.map((link) => (
-              <Link key={link.href} href={link.href} style={navLinkStyle}>
-                {link.label}
-              </Link>
-            ))}
+      <body>
+        <header
+          style={{
+            padding: '12px 16px',
+            borderBottom: '1px solid #eee',
+            display: 'flex',
+            gap: 12,
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <strong>VibeOS Adapter</strong>
+          <nav
+            style={{
+              display: 'flex',
+              gap: 12,
+              flexWrap: 'wrap',
+              justifyContent: 'flex-end',
+            }}
+          >
+            <a href="/">Home</a>
+            <a href="/timeline">Historian</a>
+            <a href="/workroom">Workroom</a>
+            <a href="/mvp">One‑Shot MVP</a>
+            <a href="/library/prompts">Prompt Library</a>
+            <a href="/research">Research Engine</a>
+            <a href="/play/map">Map Playground</a>
+            <a href="/play/social">Social Playground</a>
+            <a href="/knowledge">Knowledge</a>
+            <a href="/search">Search</a>
+            <a href="/api-manager">API Manager</a>
+            <a href="/metrics">Metrics</a>
+            <a href="/evals">Eval Lab</a>
+            <a href="/policy">Policy</a>
+            <a href="/publish">Publish</a>
           </nav>
         </header>
-        <div style={shellStyle}>{children}</div>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '16px 12px' }}>{children}</div>
       </body>
     </html>
   );

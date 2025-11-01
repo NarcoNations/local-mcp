@@ -6,7 +6,9 @@ import { logger } from "./utils/logger.js";
 async function main() {
   const args = process.argv.slice(2);
   const config = await loadConfig();
-  const watch = createWatchTool(config, (event) => logger.info("watch", event));
+  const watch = createWatchTool(config, {
+    emit: (event) => logger.info("watch", event),
+  });
   await watch({ paths: args });
   logger.info("watching", { paths: args.length ? args : config.roots.roots });
   process.stdin.resume();

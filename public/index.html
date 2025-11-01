@@ -43,7 +43,7 @@
         width: clamp(320px, 92vw, 1280px);
         display: flex;
         flex-direction: column;
-        gap: clamp(1.5rem, 2.5vw, 2.75rem);
+        gap: clamp(1.6rem, 3vw, 3rem);
       }
 
       .hero {
@@ -110,7 +110,15 @@
 
       main.content {
         display: grid;
-        gap: clamp(1.5rem, 2vw, 2rem);
+        gap: clamp(1.5rem, 2vw, 2.25rem);
+        align-items: stretch;
+      }
+
+      @media (min-width: 768px) {
+        .hero {
+          grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+          align-items: center;
+        }
       }
 
       @media (min-width: 960px) {
@@ -381,6 +389,109 @@
         font-size: 0.9rem;
       }
 
+      .system-panel {
+        display: grid;
+        gap: 1.2rem;
+      }
+
+      .system-grid {
+        display: grid;
+        gap: 1.1rem;
+      }
+
+      @media (min-width: 960px) {
+        .system-grid {
+          grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.95fr);
+          align-items: start;
+        }
+      }
+
+      .system-overview {
+        margin: 0;
+        font-size: 0.95rem;
+        color: var(--muted);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+      }
+
+      .system-overview strong {
+        color: var(--text);
+      }
+
+      .system-note {
+        margin: 0;
+        font-size: 0.85rem;
+        color: rgba(231, 235, 255, 0.55);
+      }
+
+      .watcher-wrapper {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .watcher-empty {
+        margin: 0;
+        color: rgba(231, 235, 255, 0.6);
+        font-size: 0.9rem;
+      }
+
+      .watcher-list {
+        display: grid;
+        gap: 0.75rem;
+        max-height: 260px;
+        overflow-y: auto;
+        padding-right: 0.25rem;
+      }
+
+      .watcher-card {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(8, 16, 32, 0.72);
+        border-radius: 0.9rem;
+        padding: 0.85rem 1rem;
+        display: grid;
+        gap: 0.55rem;
+      }
+
+      .watcher-card__header {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .watcher-session {
+        font-weight: 600;
+      }
+
+      .watcher-time {
+        font-size: 0.85rem;
+        color: rgba(231, 235, 255, 0.6);
+      }
+
+      .watcher-paths {
+        margin: 0;
+        font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+        font-size: 0.8rem;
+        color: rgba(231, 235, 255, 0.7);
+        word-break: break-word;
+      }
+
+      .watcher-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+
+      .watcher-chip {
+        background: var(--accent-soft);
+        border: 1px solid rgba(74, 209, 255, 0.35);
+        color: var(--accent);
+        border-radius: 999px;
+        font-size: 0.75rem;
+        padding: 0.3rem 0.75rem;
+      }
+
       .control-form {
         display: grid;
         gap: 0.75rem;
@@ -403,7 +514,7 @@
       .log-stream {
         display: grid;
         gap: 0.65rem;
-        max-height: 320px;
+        max-height: clamp(260px, 40vh, 420px);
         overflow-y: auto;
         padding-right: 0.5rem;
       }
@@ -457,9 +568,33 @@
         }
         .status-chips {
           gap: 0.5rem;
+          flex-wrap: wrap;
         }
         .chip {
           font-size: 0.85rem;
+        }
+        .system-grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .watcher-list {
+          max-height: 220px;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .status-chips {
+          flex-direction: column;
+        }
+        .chip {
+          width: 100%;
+          justify-content: space-between;
+        }
+        .form-row {
+          flex-direction: column;
+        }
+        .form-actions {
+          flex-direction: column;
+          align-items: stretch;
         }
       }
 
@@ -515,6 +650,8 @@
           <span class="chip">Files indexed: <strong id="status-files">0</strong></span>
           <span class="chip">Chunks: <strong id="status-chunks">0</strong></span>
           <span class="chip">Embeddings cached: <strong id="status-embeddings">0</strong></span>
+          <span class="chip">Sessions: <strong id="status-sessions">0</strong></span>
+          <span class="chip">Watchers: <strong id="status-watchers">0</strong></span>
         </div>
       </header>
       <main class="content">
@@ -551,6 +688,25 @@
             </div>
           </form>
           <div id="results" class="results" aria-live="polite"></div>
+        </section>
+
+        <section class="panel system-panel">
+          <h2>System status</h2>
+          <div class="system-grid">
+            <div class="system-summary">
+              <p class="system-overview">
+                <strong id="session-count">0</strong> session(s) connected ·
+                <strong id="watcher-count">0</strong> watcher(s) active
+              </p>
+              <p class="system-note">
+                SSE sessions mirror your MCP clients. Watchers keep the local corpus in sync when files change.
+              </p>
+            </div>
+            <div class="watcher-wrapper">
+              <p class="watcher-empty" id="watcher-empty">No active file watchers. Launch one to mirror filesystem updates.</p>
+              <div class="watcher-list" id="watcher-list" role="list"></div>
+            </div>
+          </div>
         </section>
 
         <section class="panel stats-panel">
@@ -619,6 +775,8 @@
       const statusFiles = document.getElementById("status-files");
       const statusChunks = document.getElementById("status-chunks");
       const statusEmbeddings = document.getElementById("status-embeddings");
+      const statusSessions = document.getElementById("status-sessions");
+      const statusWatchers = document.getElementById("status-watchers");
       const statElements = {
         pdf: document.getElementById("stat-pdf"),
         markdown: document.getElementById("stat-markdown"),
@@ -627,6 +785,10 @@
         pages: document.getElementById("stat-pages"),
       };
       const lastIndexed = document.getElementById("last-indexed");
+      const sessionCount = document.getElementById("session-count");
+      const watcherCount = document.getElementById("watcher-count");
+      const watcherList = document.getElementById("watcher-list");
+      const watcherEmpty = document.getElementById("watcher-empty");
 
       async function api(path, options = {}) {
         const response = await fetch(path, {
@@ -740,20 +902,100 @@
         });
       }
 
-      async function loadStats() {
+      function formatAbsolute(value) {
+        if (!value) return "—";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "—";
+        return date.toLocaleString();
+      }
+
+      function formatSessionLabel(id) {
+        if (!id || id === "global") return "Control room";
+        if (id === "http") return "HTTP bridge";
+        return id;
+      }
+
+      function renderWatchers(watchers = []) {
+        watcherList.innerHTML = "";
+        const count = watchers.length;
+        statusWatchers.textContent = formatNumber(count);
+        watcherCount.textContent = formatNumber(count);
+        if (!count) {
+          watcherEmpty.hidden = false;
+          return;
+        }
+        watcherEmpty.hidden = true;
+        watchers.forEach((watcher) => {
+          const card = document.createElement("article");
+          card.className = "watcher-card";
+          card.setAttribute("role", "listitem");
+
+          const header = document.createElement("div");
+          header.className = "watcher-card__header";
+
+          const session = document.createElement("span");
+          session.className = "watcher-session";
+          session.textContent = formatSessionLabel(watcher.sessionId);
+
+          const started = document.createElement("span");
+          started.className = "watcher-time";
+          started.textContent = watcher.startedAt ? `Started ${formatAbsolute(watcher.startedAt)}` : "Start pending";
+
+          header.appendChild(session);
+          header.appendChild(started);
+
+          const paths = document.createElement("p");
+          paths.className = "watcher-paths";
+          const list = Array.isArray(watcher.paths) ? watcher.paths : [];
+          paths.textContent = list.length ? list.join(" • ") : "Watching configured roots";
+
+          const meta = document.createElement("div");
+          meta.className = "watcher-meta";
+
+          const events = document.createElement("span");
+          events.className = "watcher-chip";
+          const eventCount = Number(watcher.eventCount ?? 0);
+          events.textContent = `${eventCount} event${eventCount === 1 ? "" : "s"}`;
+
+          const lastEvent = document.createElement("span");
+          lastEvent.className = "watcher-chip";
+          if (watcher.lastEventAt) {
+            const action = typeof watcher.lastEvent?.action === "string" ? watcher.lastEvent.action : "change";
+            const target = typeof watcher.lastEvent?.path === "string" ? watcher.lastEvent.path : "files";
+            lastEvent.textContent = `${action} · ${target}`;
+            lastEvent.title = `Last event at ${formatAbsolute(watcher.lastEventAt)}`;
+          } else {
+            lastEvent.textContent = "Awaiting changes";
+          }
+
+          meta.appendChild(events);
+          meta.appendChild(lastEvent);
+
+          card.appendChild(header);
+          card.appendChild(paths);
+          card.appendChild(meta);
+          watcherList.appendChild(card);
+        });
+      }
+
+      async function loadSystem() {
         try {
-          const stats = await api("/api/stats");
+          const system = await api("/api/system");
+          const stats = system.stats ?? {};
           statusFiles.textContent = formatNumber(Object.keys(stats.files || {}).length);
           statusChunks.textContent = formatNumber(stats.chunks);
           statusEmbeddings.textContent = formatNumber(stats.embeddingsCached);
+          statusSessions.textContent = formatNumber(system.sessions ?? 0);
+          sessionCount.textContent = formatNumber(system.sessions ?? 0);
           if (stats.byType) {
             Object.entries(statElements).forEach(([key, element]) => {
               element.textContent = formatNumber(stats.byType[key] ?? 0);
             });
           }
           lastIndexed.textContent = formatTimestamp(stats.lastIndexedAt);
+          renderWatchers(Array.isArray(system.watchers) ? system.watchers : []);
         } catch (error) {
-          console.error("Failed to load stats", error);
+          console.error("Failed to load system summary", error);
         }
       }
 
@@ -795,7 +1037,7 @@
       });
 
       document.getElementById("refresh-stats").addEventListener("click", () => {
-        loadStats();
+        loadSystem();
       });
 
       document.getElementById("reindex-form").addEventListener("submit", async (event) => {
@@ -810,7 +1052,7 @@
             body: JSON.stringify(payload),
           });
           setFeedback(`Reindexed: ${stats.indexed} chunks updated across ${stats.updated} file(s).`, "success");
-          loadStats();
+          loadSystem();
         } catch (error) {
           setFeedback(`Reindex failed: ${error.message}`, "error");
         }
@@ -828,6 +1070,7 @@
             body: JSON.stringify(payload),
           });
           setFeedback(`Watching ${info.watching.length} path(s).`, "success");
+          loadSystem();
         } catch (error) {
           setFeedback(`Watch failed: ${error.message}`, "error");
         }
@@ -847,7 +1090,7 @@
             body: JSON.stringify({ exportPath, outDir: outDir || undefined }),
           });
           setFeedback(`Imported ${result.filesWritten} file(s), indexed ${result.indexed} chunk(s).`, "success");
-          loadStats();
+          loadSystem();
         } catch (error) {
           setFeedback(`Import failed: ${error.message}`, "error");
         }
@@ -870,6 +1113,16 @@
         }
         logsContainer.appendChild(wrapper);
         logsContainer.scrollTop = logsContainer.scrollHeight;
+        const refreshTriggers = new Set([
+          "watch-event",
+          "watch-started",
+          "watch-failed",
+          "sse-session-started",
+          "sse-session-closed",
+        ]);
+        if (refreshTriggers.has(entry.message)) {
+          loadSystem();
+        }
       }
 
       async function primeLogs() {
@@ -905,8 +1158,10 @@
         };
       }
 
+      const SYSTEM_REFRESH_INTERVAL = 20000;
       renderResults([]);
-      loadStats();
+      loadSystem();
+      setInterval(loadSystem, SYSTEM_REFRESH_INTERVAL);
       primeLogs().then(startLogStream);
     </script>
   </body>
