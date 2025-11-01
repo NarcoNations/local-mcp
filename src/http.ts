@@ -1,13 +1,15 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import express, { Request, Response } from "express";
+import { pathToFileURL } from "node:url";
+import type { Server } from "node:http";
+import express, { type Request, type Response } from "express";
 import cors from "cors";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
-import { loadConfig } from "./config.js";
+import { loadConfig, type AppConfig } from "./config.js";
 import { logger } from "./utils/logger.js";
-import { createToolKit, registerMcpTools } from "./mcp/toolkit.js";
+import { createToolKit, type ToolKit, registerMcpTools } from "./mcp/toolkit.js";
 import { ZodError } from "zod";
 
 const SERVER_INFO = {
@@ -26,32 +28,6 @@ interface LogEntry {
 interface SessionState {
   transport: SSEServerTransport;
   server: McpServer;
-}
-
-const sessions = new Map<string, SessionState>();
-const logSubscribers = new Set<Response>();
-const logs: LogEntry[] = [];
-const MAX_LOGS = 250;
-
-function pushLog(level: LogEntry["level"], message: string, details?: Record<string, unknown>) {
-  const entry: LogEntry = {
-    id: randomUUID(),
-    level,
-    message,
-    details,
-    time: new Date().toISOString(),
-  };
-  logs.push(entry);
-  if (logs.length > MAX_LOGS) {
-    logs.splice(0, logs.length - MAX_LOGS);
-  }
-  for (const res of logSubscribers) {
-    try {
-      res.write(`data: ${JSON.stringify(entry)}\n\n`);
-    } catch {
-      logSubscribers.delete(res);
-    }
-  }
 }
 
 function parseList(env?: string): string[] | undefined {
@@ -87,13 +63,56 @@ function getSessionId(req: Request): string | undefined {
   return queryId;
 }
 
-async function main() {
-  const config = await loadConfig();
-  const httpToolkit = createToolKit(config, {
-    onWatchEvent: (event) => {
-      pushLog("info", "watch-event", event as Record<string, unknown>);
-    },
-  });
+export interface HttpServerOptions {
+  config?: AppConfig;
+  toolkit?: ToolKit;
+  toolkitFactory?: typeof createToolKit;
+  host?: string;
+  port?: number;
+}
+
+export interface HttpServerInstance {
+  app: express.Express;
+  start: (port?: number, host?: string) => Promise<Server>;
+  stop: () => Promise<void>;
+}
+
+export async function createHttpServer(options: HttpServerOptions = {}): Promise<HttpServerInstance> {
+  const config = options.config ?? (await loadConfig());
+  const toolkitFactory = options.toolkitFactory ?? createToolKit;
+
+  const sessions = new Map<string, SessionState>();
+  const logSubscribers = new Set<Response>();
+  const logs: LogEntry[] = [];
+  const MAX_LOGS = 250;
+
+  function pushLog(level: LogEntry["level"], message: string, details?: Record<string, unknown>) {
+    const entry: LogEntry = {
+      id: randomUUID(),
+      level,
+      message,
+      details,
+      time: new Date().toISOString(),
+    };
+    logs.push(entry);
+    if (logs.length > MAX_LOGS) {
+      logs.splice(0, logs.length - MAX_LOGS);
+    }
+    for (const res of logSubscribers) {
+      try {
+        res.write(`data: ${JSON.stringify(entry)}\n\n`);
+      } catch {
+        logSubscribers.delete(res);
+      }
+    }
+  }
+
+  const httpToolkit = options.toolkit ??
+    toolkitFactory(config, {
+      onWatchEvent: (event) => {
+        pushLog("info", "watch-event", event as Record<string, unknown>);
+      },
+    });
 
   const app = express();
   app.use(
@@ -117,7 +136,7 @@ async function main() {
         instructions:
           "Local research MCP server. Use search_local for retrieval, get_doc for source text, reindex/watch to refresh, stats for corpus metrics, and import_chatgpt_export to convert ChatGPT exports.",
       });
-      const toolkit = createToolKit(config, {
+      const toolkit = toolkitFactory(config, {
         server: sessionServer,
         onWatchEvent: (event) => pushLog("info", "watch-event", event as Record<string, unknown>),
       });
@@ -128,9 +147,13 @@ async function main() {
         allowedHosts,
         allowedOrigins,
       });
+      res.setHeader("Mcp-Session-Id", transport.sessionId);
       sessions.set(transport.sessionId, { server: sessionServer, transport });
 
+      let isClosing = false;
       transport.onclose = () => {
+        if (isClosing) return;
+        isClosing = true;
         sessions.delete(transport!.sessionId);
         pushLog("info", "sse-session-closed", { sessionId: transport!.sessionId });
         sessionServer.close().catch(() => {});
@@ -318,7 +341,11 @@ async function main() {
   const staticInfo = resolveStaticDir();
   if (staticInfo) {
     app.use(express.static(staticInfo.root, { index: false, fallthrough: true }));
-    app.get("*", (req, res, next) => {
+    app.use((req, res, next) => {
+      if (req.method !== "GET") {
+        next();
+        return;
+      }
       if (req.path.startsWith("/api") || req.path.startsWith("/mcp")) {
         next();
         return;
@@ -327,17 +354,65 @@ async function main() {
     });
   }
 
-  const port = Number(process.env.HTTP_PORT ?? process.env.PORT ?? 3030);
-  const host = process.env.HOST ?? "0.0.0.0";
+  let server: Server | null = null;
 
-  app.listen(port, host, () => {
-    logger.info("http-listening", { port, host, staticRoot: staticInfo?.root });
-    pushLog("info", "http-listening", { port, host, staticRoot: staticInfo?.root });
-  });
+  const start = async (
+    port = options.port ?? Number(process.env.HTTP_PORT ?? process.env.PORT ?? 3030),
+    host = options.host ?? process.env.HOST ?? "0.0.0.0",
+  ): Promise<Server> => {
+    if (server) {
+      return server;
+    }
+    server = await new Promise<Server>((resolve, reject) => {
+      const listener = app
+        .listen(port, host, () => {
+          logger.info("http-listening", { port, host, staticRoot: staticInfo?.root });
+          pushLog("info", "http-listening", { port, host, staticRoot: staticInfo?.root });
+          resolve(listener);
+        })
+        .on("error", (error) => {
+          reject(error);
+        });
+    });
+    return server;
+  };
+
+  const stop = async () => {
+    for (const session of sessions.values()) {
+      await session.transport.close().catch(() => {});
+      await session.server.close().catch(() => {});
+    }
+    sessions.clear();
+    for (const res of logSubscribers) {
+      try {
+        res.end();
+      } catch {
+        // ignore
+      }
+    }
+    logSubscribers.clear();
+    if (!server) return;
+    await new Promise<void>((resolve, reject) => {
+      server!.close((error) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve();
+        }
+      });
+    });
+    server = null;
+  };
+
+  return { app, start, stop };
 }
 
-main().catch((err) => {
-  logger.error("http-startup-failed", { err: String(err) });
-  pushLog("error", "http-startup-failed", { error: String(err) });
-  process.exit(1);
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  createHttpServer()
+    .then((server) => server.start())
+    .catch((err) => {
+      logger.error("http-startup-failed", { err: String(err) });
+      process.exit(1);
+    });
+}
+

@@ -9,5 +9,6 @@ jobs:
         with:
           node-version: '20'
       - run: npm ci
+      - run: npx playwright install-deps chromium
       - run: npm run typecheck
       - run: npm test

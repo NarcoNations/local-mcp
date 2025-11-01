@@ -49,6 +49,20 @@ The UI is bundled into the Vercel-friendly build output (`npm run build`) and se
 
 `metadata.stdio` retains the stdio command for clients that prefer local execution.
 
+### Testing
+
+- `npm run test:api` – runs the Vitest integration suite against the HTTP + SSE bridge.
+- `npm run test:ui` – executes Playwright coverage for the control room UI across desktop and mobile breakpoints.
+- `npm test` (or `npm run test:ci`) – executes both suites sequentially.
+
+First-time Playwright runs require browser dependencies:
+
+```bash
+npx playwright install-deps chromium
+```
+
+On CI/Vercel the build pipeline already invokes these commands via `postinstall` and the configured workflows.
+
 ### Example tool calls
 
 `search_local`
