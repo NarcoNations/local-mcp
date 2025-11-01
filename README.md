@@ -186,7 +186,29 @@ Vitest covers chunking, hybrid storage, PDF OCR fallback (mocked), and ChatGPT c
 
 ## Vercel deployment
 
-`vercel.json` is configured to run `npm run build` and publish `dist/` (which now contains static docs alongside compiled JS). The build avoids native dependencies, making the project safe for Vercel preview builds.
+The project ships with a serverless bridge for Vercel. The control room UI is exported to `dist/` during `npm run build`, while `api/index.ts` adapts the Express app to `@vercel/node` so `/api/*`, `/mcp/*`, `/health`, and `/mcp.json` are all served from a single function that keeps Server-Sent Event streams alive.
+
+### Build & deploy steps
+
+1. `npm install`
+2. `npm run build` – compiles TypeScript to `dist/` and copies the static UI.
+3. `vercel deploy` (or push to a connected repo). The included `vercel.json` wires the function and static assets automatically.
+
+### Environment variables
+
+Set these in the Vercel dashboard (Project → Settings → Environment Variables):
+
+- `MCP_ALLOW_ORIGINS` – CSV of allowed web origins for CORS (default: all origins).
+- `MCP_ALLOWED_ORIGINS` – whitelist for SSE DNS-rebinding protection (optional).
+- `MCP_ALLOWED_HOSTS` – additional hostnames allowed to initiate SSE sessions (optional).
+- `MCP_ENABLE_DNS_REBINDING` – set to `1` to enforce host/origin checks inside the SSE transport.
+- `TRANSFORMERS_CACHE` / `TRANSFORMERS_OFFLINE` – customise on-device model caching if required by the deployment.
+
+### SSE and serverless caveats
+
+- Vercel functions time out by default after 10 s; `vercel.json` raises the cap to 60 s and the handler disables socket timeouts/keep-alives so SSE connections stay open.
+- File watching (`/api/watch`) is limited on Vercel because the filesystem is ephemeral. Use it only for remote notifications; local incremental indexing is still best run on a persistent machine.
+- The control room UI is static, so non-API routes are served straight from the CDN. API/SSE traffic flows through `api/index.ts`, which reuses the same Express app as local development to maintain feature parity.
 
 ## Styling & conventions
 

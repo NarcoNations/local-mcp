@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
+import http from "node:http";
 import path from "node:path";
-import express, { Request, Response } from "express";
+import { pathToFileURL } from "node:url";
+import express, { type Express, type Request, type Response } from "express";
 import cors from "cors";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
@@ -28,30 +30,26 @@ interface SessionState {
   server: McpServer;
 }
 
-const sessions = new Map<string, SessionState>();
-const logSubscribers = new Set<Response>();
-const logs: LogEntry[] = [];
-const MAX_LOGS = 250;
+export interface HttpServerOptions {
+  serveStatic?: boolean;
+}
 
-function pushLog(level: LogEntry["level"], message: string, details?: Record<string, unknown>) {
-  const entry: LogEntry = {
-    id: randomUUID(),
-    level,
-    message,
-    details,
-    time: new Date().toISOString(),
-  };
-  logs.push(entry);
-  if (logs.length > MAX_LOGS) {
-    logs.splice(0, logs.length - MAX_LOGS);
-  }
-  for (const res of logSubscribers) {
-    try {
-      res.write(`data: ${JSON.stringify(entry)}\n\n`);
-    } catch {
-      logSubscribers.delete(res);
-    }
-  }
+export interface HttpServerInstance {
+  app: Express;
+  logs: LogEntry[];
+  sessions: Map<string, SessionState>;
+  staticInfo: { root: string; index: string } | null;
+  pushLog: (level: LogEntry["level"], message: string, details?: Record<string, unknown>) => void;
+  close: () => Promise<void>;
+}
+
+export interface StartHttpServerOptions extends HttpServerOptions {
+  port?: number;
+  host?: string;
+}
+
+export interface StartHttpServerResult extends HttpServerInstance {
+  server: http.Server;
 }
 
 function parseList(env?: string): string[] | undefined {
@@ -87,7 +85,45 @@ function getSessionId(req: Request): string | undefined {
   return queryId;
 }
 
-async function main() {
+function prepareSse(req: Request, res: Response) {
+  if (!res.headersSent) {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
+  }
+  (res as Response & { flushHeaders?: () => void }).flushHeaders?.();
+  req.socket?.setTimeout?.(0);
+  req.socket?.setNoDelay?.(true);
+  req.socket?.setKeepAlive?.(true, 60_000);
+}
+
+export async function createHttpServer(options: HttpServerOptions = {}): Promise<HttpServerInstance> {
+  const { serveStatic = true } = options;
+  const sessions = new Map<string, SessionState>();
+  const logSubscribers = new Set<Response>();
+  const logs: LogEntry[] = [];
+
+  function pushLog(level: LogEntry["level"], message: string, details?: Record<string, unknown>) {
+    const entry: LogEntry = {
+      id: randomUUID(),
+      level,
+      message,
+      details,
+      time: new Date().toISOString(),
+    };
+    logs.push(entry);
+    if (logs.length > 250) {
+      logs.splice(0, logs.length - 250);
+    }
+    for (const res of logSubscribers) {
+      try {
+        res.write(`data: ${JSON.stringify(entry)}\n\n`);
+      } catch {
+        logSubscribers.delete(res);
+      }
+    }
+  }
+
   const config = await loadConfig();
   const httpToolkit = createToolKit(config, {
     onWatchEvent: (event) => {
@@ -110,6 +146,7 @@ async function main() {
   const allowedOrigins = parseList(process.env.MCP_ALLOWED_ORIGINS);
 
   app.get("/mcp/sse", async (req, res) => {
+    prepareSse(req, res);
     let transport: SSEServerTransport | null = null;
     try {
       const sessionServer = new McpServer(SERVER_INFO, {
@@ -286,11 +323,7 @@ async function main() {
   });
 
   app.get("/api/logs/stream", (req, res) => {
-    res.writeHead(200, {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache, no-transform",
-      Connection: "keep-alive",
-    });
+    prepareSse(req, res);
     logs.forEach((entry) => {
       res.write(`data: ${JSON.stringify(entry)}\n\n`);
     });
@@ -315,7 +348,7 @@ async function main() {
     });
   });
 
-  const staticInfo = resolveStaticDir();
+  const staticInfo = serveStatic ? resolveStaticDir() : null;
   if (staticInfo) {
     app.use(express.static(staticInfo.root, { index: false, fallthrough: true }));
     app.get("*", (req, res, next) => {
@@ -327,17 +360,41 @@ async function main() {
     });
   }
 
-  const port = Number(process.env.HTTP_PORT ?? process.env.PORT ?? 3030);
-  const host = process.env.HOST ?? "0.0.0.0";
+  async function close() {
+    for (const { transport, server } of sessions.values()) {
+      await transport.close().catch(() => {});
+      await server.close().catch(() => {});
+    }
+    sessions.clear();
+    for (const subscriber of logSubscribers) {
+      try {
+        subscriber.end();
+      } catch {
+        // ignore
+      }
+    }
+    logSubscribers.clear();
+  }
 
-  app.listen(port, host, () => {
-    logger.info("http-listening", { port, host, staticRoot: staticInfo?.root });
-    pushLog("info", "http-listening", { port, host, staticRoot: staticInfo?.root });
-  });
+  return { app, logs, sessions, staticInfo, pushLog, close };
 }
 
-main().catch((err) => {
-  logger.error("http-startup-failed", { err: String(err) });
-  pushLog("error", "http-startup-failed", { error: String(err) });
-  process.exit(1);
-});
+export async function startHttpServer(options: StartHttpServerOptions = {}): Promise<StartHttpServerResult> {
+  const instance = await createHttpServer(options);
+  const port = options.port ?? Number(process.env.HTTP_PORT ?? process.env.PORT ?? 3030);
+  const host = options.host ?? process.env.HOST ?? "0.0.0.0";
+
+  const server = instance.app.listen(port, host, () => {
+    logger.info("http-listening", { port, host, staticRoot: instance.staticInfo?.root });
+    instance.pushLog("info", "http-listening", { port, host, staticRoot: instance.staticInfo?.root });
+  });
+
+  return { ...instance, server };
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  startHttpServer().catch((err) => {
+    logger.error("http-startup-failed", { err: String(err) });
+    process.exit(1);
+  });
+}

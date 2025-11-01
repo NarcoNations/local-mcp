@@ -5,5 +5,16 @@
   "outputDirectory": "dist",
   "env": {
     "NODE_OPTIONS": "--enable-source-maps"
-  }
+  },
+  "functions": {
+    "api/index.ts": {
+      "runtime": "@vercel/node@3",
+      "maxDuration": 60
+    }
+  },
+  "routes": [
+    { "src": "/(?:api|mcp)(?:/.*)?", "dest": "/api/index.ts" },
+    { "src": "/mcp\\.json", "dest": "/api/index.ts" },
+    { "src": "/health", "dest": "/api/index.ts" }
+  ]
 }
