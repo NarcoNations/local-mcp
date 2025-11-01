@@ -37,6 +37,13 @@ The UI (served from <http://localhost:3030>) is fully responsive, mobile-first, 
 
 The UI is bundled into the Vercel-friendly build output (`npm run build`) and served by the HTTP bridge.
 
+#### Responsive design & testing
+
+- Layout scales on a fluid container (`clamp(320px, 92vw, 1280px)`) with cinematic spacing on desktops and relaxed padding on handhelds.
+- Hero, form controls, and result headers reflow across dedicated breakpoints (540 px, 768 px, 960 px, 1200 px) to avoid overflow while keeping secondary panels visible on ultrawide screens.
+- Buttons and result actions stack automatically on narrow widths to keep tap targets full-width.
+- Tested manually in Chromium devtools at 375 × 812, 768 × 1024, 1280 × 720, and 1600 × 900 viewports while running `npm run dev`.
+
 ### Expose the bridge to ChatGPT (HTTPS + SSE)
 
 1. Start the bridge: `npm run dev:http` (or `npm start` after `npm run build`).

@@ -28,6 +28,7 @@
       body {
         margin: 0;
         min-height: 100vh;
+        min-height: 100dvh;
         background:
           radial-gradient(circle at 20% 20%, rgba(74, 209, 255, 0.22), transparent 55%),
           radial-gradient(circle at 80% 0%, rgba(255, 145, 200, 0.18), transparent 50%),
@@ -35,11 +36,11 @@
         color: var(--text);
         display: flex;
         justify-content: center;
-        padding: clamp(1.2rem, 2.5vw, 2.4rem);
+        padding: clamp(1rem, 3vw, 3.75rem);
       }
 
       .app {
-        width: min(1100px, 100%);
+        width: clamp(320px, 92vw, 1280px);
         display: flex;
         flex-direction: column;
         gap: clamp(1.5rem, 2.5vw, 2.75rem);
@@ -51,6 +52,7 @@
         border-radius: clamp(1.5rem, 3vw, 2.5rem);
         padding: clamp(1.8rem, 4vw, 3.2rem);
         display: grid;
+        grid-template-columns: minmax(0, 1fr);
         gap: clamp(1.2rem, 2vw, 1.8rem);
         position: relative;
         overflow: hidden;
@@ -86,6 +88,7 @@
         gap: 0.75rem;
         position: relative;
         z-index: 1;
+        justify-content: flex-start;
       }
 
       .chip {
@@ -116,6 +119,16 @@
         }
         .search-panel {
           grid-row: span 2;
+        }
+      }
+
+      @media (min-width: 768px) {
+        .hero {
+          grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+          align-items: center;
+        }
+        .status-chips {
+          justify-content: flex-end;
         }
       }
 
@@ -219,6 +232,7 @@
         display: flex;
         gap: 0.75rem;
         flex-wrap: wrap;
+        width: 100%;
       }
 
       button {
@@ -329,6 +343,8 @@
       .result-actions {
         display: flex;
         justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 0.5rem;
       }
 
       .stat-grid {
@@ -444,6 +460,43 @@
         }
         .chip {
           font-size: 0.85rem;
+        }
+      }
+
+      @media (max-width: 540px) {
+        .result-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.4rem;
+        }
+        .result-meta {
+          text-align: left;
+        }
+        .form-actions {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .form-actions button {
+          width: 100%;
+        }
+        .result-actions {
+          justify-content: stretch;
+        }
+      }
+
+      @media (min-width: 1200px) {
+        .hero {
+          padding: clamp(2.5rem, 5vw, 4rem);
+        }
+        .hero h1 {
+          font-size: clamp(2.75rem, 4vw, 4.25rem);
+        }
+        main.content {
+          grid-template-columns: minmax(0, 2.3fr) minmax(0, 1.2fr);
+          gap: clamp(2.2rem, 3vw, 3.5rem);
+        }
+        .log-stream {
+          max-height: 420px;
         }
       }
     </style>
