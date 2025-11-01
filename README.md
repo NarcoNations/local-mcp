@@ -186,7 +186,52 @@ Vitest covers chunking, hybrid storage, PDF OCR fallback (mocked), and ChatGPT c
 
 ## Vercel deployment
 
-`vercel.json` is configured to run `npm run build` and publish `dist/` (which now contains static docs alongside compiled JS). The build avoids native dependencies, making the project safe for Vercel preview builds.
+### Build & output configuration
+
+- `vercel.json` pins the build command to `npm run vercel-build`, sets the output directory to `dist/`, and forwards `NODE_OPTIONS=--enable-source-maps` so stack traces stay readable in serverless logs.
+- `npm run vercel-build` performs a clean build (`rimraf dist`) before compiling TypeScript with `tsconfig.build.json`. The config emits flat entry points (`dist/http.js`, `dist/server.js`, `dist/cli-*.js`) that align with the production `npm start` scripts Vercel invokes during runtime checks.
+- Static assets from `public/` are copied into `dist/` by `scripts/copy-static.mjs`, so the responsive control room UI ships alongside the compiled server files without any extra routing rules.
+- Ensure the Vercel project targets **Node.js 20** and uses the "Other" framework preset so the settings from `vercel.json` take effect unchanged.
+
+### Runtime environment variables
+
+Configure these in the Vercel project ("Settings → Environment Variables" or `vercel env add`). Defaults are shown for context; omit optional keys unless you need to override the behaviour.
+
+| Variable | Required | Default | Purpose |
+| --- | --- | --- | --- |
+| `MCP_NN_DATA_DIR` | No | `.mcp-nn` | Persisted index + cache directory. Override when using an attached volume. |
+| `TRANSFORMERS_CACHE` | No | derived from `MCP_NN_DATA_DIR` | Controls where `@xenova/transformers` stores model weights. |
+| `MCP_ALLOW_ORIGINS` | No | `*` (Express `cors` default) | Restrict UI/API origins during SSR/preview mode. Comma-separated list. |
+| `MCP_ALLOWED_ORIGINS` | No | unset | Extra allow-list for SSE sessions (in addition to `MCP_ALLOW_ORIGINS`). |
+| `MCP_ALLOWED_HOSTS` | No | unset | Optional host allow-list for SSE DNS-rebinding protection. |
+| `MCP_ENABLE_DNS_REBINDING` | No | `0` | Set to `1` to enable the SDK's DNS rebinding guard on the SSE transport. |
+| `HTTP_PORT` / `PORT` | No | `3030` | Override the HTTP listener port. Vercel supplies `PORT` automatically in production. |
+| `HOST` | No | `0.0.0.0` | Bind address for the HTTP server. Vercel ignores this and injects its own. |
+| `SAMPLE_PDF` | No | `./test/data/05-versions-space.pdf` | Change the demo document parsed at startup. |
+| `DISABLE_SAMPLE_PDF` | No | `0` | Set to `1` to skip demo parsing entirely. |
+| `DEBUG` | No | `0` unless `NODE_ENV=development` | Enables verbose JSON logging. |
+
+### Optional provider secrets
+
+Only add these when enabling the optional adapters:
+
+- `OPENAI_API_KEY` – required by the LLM probe in `packages/api-manager`.
+- `ALPHA_VANTAGE_KEY` – enables the AlphaVantage feed probe in `packages/api-manager`.
+- `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY`, `SUPABASE_BUCKET_FILES` – power the Supabase ingestion paths in `examples/next-adapter`.
+- `MD_CONVERT_URL` – remote Markdown conversion endpoint consumed by the Next.js ingest routes.
+- `TELEMETRY_BEARER_TOKEN` – secures the optional telemetry API route in the adapter.
+- `INGEST_SUPABASE` – toggle (set to `true`) to enable Supabase ingestion inside the example adapter.
+
+### Local verification
+
+Before pushing a change, run the same steps Vercel will execute:
+
+```bash
+npm run vercel-build
+npx vercel build --yes
+```
+
+The second command requires a Vercel login/token and outbound network access; skip or mock it in CI environments without internet connectivity.
 
 ## Styling & conventions
 
