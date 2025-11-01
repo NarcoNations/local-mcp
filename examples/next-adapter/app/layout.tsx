@@ -70,3 +70,40 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+
+const headerStyle: CSSProperties = {
+  position: 'sticky',
+  top: 0,
+  zIndex: 10,
+  width: '100%',
+  background: 'rgba(255,255,255,0.95)',
+  backdropFilter: 'blur(12px)',
+  borderBottom: '1px solid rgba(15,23,42,0.08)',
+  padding: '12px 20px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '12px'
+};
+
+const brandStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column'
+};
+
+const navStyle: CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '8px',
+  alignItems: 'center'
+};
+
+const navLinkStyle: CSSProperties = {
+  padding: '6px 12px',
+  borderRadius: '999px',
+  background: 'rgba(15,23,42,0.08)',
+  fontSize: '0.9rem',
+  fontWeight: 600,
+  transition: 'background 0.2s ease',
+  display: 'inline-flex',
+  alignItems: 'center'
+};
