@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { runLLM } from '@vibelabz/api-manager';
+import { runLLM } from '@/lib/llm';
 
 export async function POST(request: Request) {
   try {
